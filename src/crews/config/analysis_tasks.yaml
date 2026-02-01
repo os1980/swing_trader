@@ -1,0 +1,76 @@
+#swing_analysis_task:
+#  description: >
+#    Analyze {symbol} for the trade date {trade_date} by executing the following
+#        sequential data-harvesting protocol:
+#
+#    STEP 1: DATA FETCHING (MANDATORY)
+#    Call the following tools EXACTLY ONCE. If a tool fails, mark it as 'Unavailable'
+#    and move to the next. Do not retry.
+#    - Call get_yfinance_data exactly once with:
+#        symbol = "{symbol}"
+#        start_date = {start_date}
+#        end_date = {end_date}
+#
+#    - Call get_technical_indicators exactly once with:
+#        symbol = "{symbol}"
+#        start_date = {start_date}
+#        end_date = {end_date}
+#
+#    - Call get_fundamental_analysis exactly once with:
+#        symbol = "{symbol}"
+#        end_date = {end_date}
+#
+#    - Call get_finnhub_news exactly once with:
+#        symbol = "{symbol}"
+#        start_date = {start_date}
+#
+#    - Call get_social_media_sentiment once with:
+#        symbol = "{symbol}"
+#        end_date={end_date}
+#
+#    STEP 2: REPORT SYNTHESIS
+#    Review the tool outputs. You must explicitly highlight the 'Closing Price'
+#    returned by yfinance for the date {end_date}.
+#    Compare the 'News Sentiment' against 'Social Sentiment' to create a
+#    consensus 'Market Mood' score.
+#  expected_output: >
+#    A comprehensive Swing Trading Dossier in Markdown including:
+#    - VERIFIED DATE: The actual date of the data retrieved.
+#    - PRICE ACTION: Closing Price, 20-day ATR, and Key Support/Resistance levels.
+#    - FUNDAMENTAL HEALTH: P/E Ratio, Debt-to-Equity, and recent Earnings surprises.
+#    - SENTIMENT PULSE: A synthesized score (-1.0 to +1.0) based on News and Social media.
+#    - CATALYSTS: List the top 3 news events impacting the price as of {trade_date}.
+#  agent: swing_trade_analyst
+
+swing_analysis_task:
+  description: >
+    Analyze {symbol} for the trade date {trade_date} by executing the following 
+    sequential data-harvesting protocol:
+    Call the following tools EXACTLY ONCE. If a tool fails, mark it as 'Unavailable'
+    and move to the next. Do not retry.
+    1. **Price & Trend (yFinance):** Fetch OHLC data for the period {start_date} to {end_date}. 
+       Identify current momentum, prevailing trends, and any candlestick patterns 
+       relevant for a 5-14 day swing.
+    
+    2. **Indicator Audit (Technical Indicators):** Retrieve predefined indicators 
+       for the past several days. Look for shifts (e.g., RSI crosses, MACD 
+       divergences) that signal a trend exhaustion or acceleration.
+    
+    3. **Strength Assessment (Fundamental Analysis):** Evaluate the company's 
+       internal health as of {end_date}. Identify any recent changes in debt, 
+       cash flow, or earnings that could create a floor or ceiling for the price.
+    
+    4. **Sentiment Catalyst (Finnhub & Social Media):** Scan news headlines 
+       and social sentiment. Identify the specific "Narrative" driving the 
+       ticker and whether the sentiment is improving or decaying.
+
+    **STRICT GROUNDING:** You must explicitly record the 'Closing Price' from 
+    {trade_date} to ensure the subsequent Van Tharp Specialist uses correct numbers.
+  expected_output: >
+    A structured 'Swing Trading Dossier' including:
+    - **Price Fact-Sheet:** Verified {trade_date} Close, High/Low range, and ATR.
+    - **Technical Consensus:** Summary of trend/momentum alignment.
+    - **Fundamental Health:** Current P/E, Debt-to-Equity, and recent growth shifts.
+    - **Sentiment Pulse:** Catalyst summary and Social/News sentiment score (-1 to 1).
+    - **Trade Viability:** A brief statement on whether the data is consistent or conflicting.
+  agent: swing_trade_analyst

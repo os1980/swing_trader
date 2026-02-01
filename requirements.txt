@@ -1,0 +1,15 @@
+pyyaml
+crewai
+crewai-tools
+langchain-ollama
+yfinance
+pandas
+ta-lib
+finnhub-python
+python-dotenv
+pydantic
+chromadb
+litellm
+litellm[proxy]
+mcp~=1.16.0
+rich>=14.2.0

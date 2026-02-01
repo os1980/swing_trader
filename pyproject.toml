@@ -1,0 +1,53 @@
+[project]
+name = "swing_trader"
+version = "0.1.0"
+description = "ai-trading-crew using crewAI"
+authors = [
+    { name = "Yourname", email = "you@example.com" },
+]
+requires-python = ">=3.12,<3.14"
+
+dependencies = [
+    "langchain-ollama>=1.0.1",
+    "ta-lib>=0.4.24",
+    "pyyaml>=6.0",
+    "beautifulsoup4>=4.13.5",
+    "chromadb>=1.1.1",
+    "crewai>=1.8.0",
+    "crewai-tools>=1.8.0",
+    "python-dotenv>=0.9.9",
+    "finnhub-python>=2.4.26",
+    "langchain>=1.2.3",
+    "langchain-community>=0.4.1",
+    "langchain-ollama>=1.0.1",
+    "langchain-tavily>=0.2.16",
+    "pandas>=2.3.3",
+    "pydantic>=2.11.10",
+    "pygraphviz>=1.14",
+    "requests>=2.32.5",
+    "rich>=14.2.0",
+    "sentence-transformers>=5.2.0",
+    "stockstats>=0.6.5",
+    "tavily-python>=0.7.17",
+    "transformers>=4.46.3",
+    "typing-extensions>=4.15.0",
+    "yfinance>=1.0",
+    "litellm>=0.3.5",
+]
+
+[tool.uv]
+package = true
+
+
+[project.scripts]
+ai_trading_crew = "swing_trader.src.main:run"
+run_crew = "src.main:run"
+train = "swing_trader.src.backtest:train"
+replay = "swing_trader.src.main:replay"
+test = "swing_trader.src.main:test"
+#
+#[build-system]
+#requires = [
+#    "hatchling",
+#]
+#build-backend = "hatchling.build"

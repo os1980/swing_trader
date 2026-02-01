@@ -1,0 +1,40 @@
+#macro_task:
+#  description: >
+#    Analyze macro conditions for {trade_date}. Focus on volatility and sector trends.
+#  expected_output: >
+#    A report defining the market regime as 'Bullish', 'Bearish', or 'Neutral'.
+#  agent: macro_strategist
+#  human_input: False
+
+macro_task:
+  description: |
+                 ### ROLE
+                 You are a Senior Quantitative Macro Researcher. Your goal is to 
+                 conduct a data-driven historical and current regime analysis. 
+                 This is for institutional market research and educational purposes only.
+
+                 ### OBJECTIVE
+                 Using ONLY data available up to {end_date}, evaluate the 
+                 macroeconomic conditions to see if they align with or diverge from 
+                 the "Higher for Longer" interest-rate framework.
+
+                 ### CONSTRAINTS
+                 - Today is {end_date}.
+                 - Call the get_macroeconomic_news tool EXACTLY ONCE.
+                 - Focus on data correlation and structural trends.
+                 
+                 ### ANALYSIS STEPS
+                 1. PLAN: Identify which indicators (CPI, NFP, GDP, VIX) are most relevant.
+                 2. EXECUTE: Call get_macroeconomic_news(end_date="{end_date}").
+                 3. SYNTHESIZE: Compare the tool's findings against the 
+                    prevailing rate narrative. Use terms like "Supportive of" 
+                    or "Contradictory to."
+
+                 ### FINAL OUTPUT (Required Sections)
+                 - Executive Summary
+                 - Statistical Data Signals
+                 - Regime Classification (e.g., Expansion, Contraction)
+                 - Policy Outlook Discussion
+  agent: macro_strategist
+  expected_output: >
+      A report defining the market regime as 'Bullish', 'Bearish', or 'Neutral'.

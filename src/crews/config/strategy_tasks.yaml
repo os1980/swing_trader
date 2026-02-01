@@ -1,0 +1,65 @@
+#strategy_task:
+#  description: >
+#    Review macro context ({macro_context}) and ticker data ({ticker_data}).
+#    Perform a Bull vs Bear debate for {symbol}.
+#  expected_output: >
+#    Final trading plan with Entry, Stop-Loss, and Take-Profit.
+#  human_input: False
+#  agent: strategy_manager
+
+#strategy_task:
+#  description: >
+#    Using the 'Swing Trading Dossier' provided by the Analyst, apply the Van Tharp
+#    Expectancy Methodology.
+#        1. Define 1R (Initial Risk) as the distance between Entry and the Stop Loss
+#           derived from the ATR provided in the dossier.
+#        2. Calculate Expectancy: $E = (P_w \times \text{Reward}) - (P_l \times \text{Risk})$.
+#        3. Determine if $E \ge 0.2$ to issue a signal.
+#  expected_output: >
+#    A single, raw JSON object following the specified schema.
+#    Do not include explanations or markdown formatting.
+#  agent: strategy_manager
+#  context: [swing_analysis_task, macro_task]
+
+#strategy_task:
+#  description: >
+#    Using the provided MACRO_REPORT and ANALYST_DOSSIER,
+#    generate the final trading signal for {symbol} for {trade_date}.
+#
+#        MACRO_REPORT: {macro_report}
+#        ANALYST_DOSSIER: {analyst_dossier}
+#
+#    1. **Determine Entry & Stop:** Use the ATR and Support levels from the dossier
+#       to define the Entry Price and Initial Stop Loss. The distance between
+#       these two is 1R (Initial Risk).
+#    2. **Calculate Expectancy:** Assign a Win Probability ($P_w$) based on the
+#       Macro and Sentiment alignment. Calculate Expectancy ($E$) using the formula:
+#       $$E = (P_w \times \text{Average R Win}) - ((1 - P_w) \times 1)$$
+#       where the average win is your Target R-multiple and 1 represents the 1R risk.
+#    3. **Position Sizing:** Calculate the number of shares such that 1R equals
+#       exactly {risk}% of a ${equity} account.
+#    4. **Rationale:** shorty summerize the bull_case and bear_case as Steel-Man debate
+#    4. **JSON Generation:** Output the result strictly in JSON format.
+#  expected_output: >
+#    A structured JSON object for trade execution.
+#  agent: strategy_manager
+
+portfolio_analysis_task:
+  description: >
+    Review the collection of analysis dossiers for all symbols: {all_symbol_reports}.
+    
+    1. **Rank by Expectancy:** For each symbol, calculate/verify the Expectancy 
+       using $E = (P_w \times \text{Reward}) - ((1 - P_w) \times 1)$.
+    2. **Filter:** Discard any setup where $E < 0.2$ or the data appears 
+       to be from the wrong year (hallucinated).
+    3. **Capital Allocation:** You have a total portfolio of ${equity}. 
+       Risk exactly {risk}% per trade. If multiple stocks have high E-values, 
+       include them all in the list, but rank them from highest E to lowest.
+    4. **JSON Construction:** Create a list of JSON objects where each object 
+       follows the Tharpian Trade Signal schema.
+  expected_output: >
+    A RAW JSON list of objects. Each object must include:
+    "symbol", "signal" (BUY/HOLD), "market_type", "setup", 
+    "expectancy_scorecard", and "position_sizing".
+    If no stocks meet the criteria, return an empty list [].
+  agent: portfolio_strategy_manager
