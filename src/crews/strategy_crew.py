@@ -1,7 +1,7 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from helpers.utils import local_llm_deep, local_embedder
-from helpers.trade_signals import TradeSignal
+from ..helpers.utils import local_llm_deep, local_embedder
+from ..helpers.trade_signals import PortfolioResponse
 
 @CrewBase
 class StrategyCrew():
@@ -12,13 +12,13 @@ class StrategyCrew():
     tasks_config = "config/strategy_tasks.yaml"
 
     @agent
-    def strategy_manager(self) -> Agent:
-        return Agent(config=self.agents_config['strategy_manager'], llm=self.llm, memory=True)
+    def portfolio_strategy_manager(self) -> Agent:
+        return Agent(config=self.agents_config['portfolio_strategy_manager'], llm=self.llm, memory=True)
 
     @task
-    def strategy_task(self) -> Task:
-        return Task(config=self.tasks_config['strategy_task'],
-                    output_json=TradeSignal,)
+    def portfolio_analysis_task(self) -> Task:
+        return Task(config=self.tasks_config['portfolio_analysis_task'],
+                    output_json=PortfolioResponse,)
 
     @crew
     def crew(self) -> Crew:

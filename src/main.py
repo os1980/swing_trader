@@ -1,3 +1,4 @@
+import pandas as pd
 from dotenv import load_dotenv
 from getpass import getpass
 import os
@@ -33,9 +34,9 @@ from pathlib import Path
 
 from crewai.flow.flow import Flow, listen, start
 from pydantic import BaseModel
-from crews.macro_crew import MacroCrew
-from crews.analysis_crew import AnalysisCrew
-from crews.strategy_crew import StrategyCrew
+from .crews.macro_crew import MacroCrew
+from .crews.analysis_crew import AnalysisCrew
+from .crews.strategy_crew import StrategyCrew
 import datetime
 
 # Silence only this exact family of pydantic serialization warnings
@@ -111,42 +112,72 @@ class SwingSentryFlow(Flow[TradingState]):
                 "trade_date": self.state.trade_date,
                 "start_date": self.state.start_date,
                 "end_date": self.state.end_date,
-                # "macro_context": self.state.macro_context,
+                "macro_context": self.state.macro_context,
                 "equity": self.state.equity,
                 "risk": str(float(self.state.risk) * 100),
             })
 
             self.state.ticker_analysis_results[symbol] = result.raw
 
+    # @listen(analyze_all_symbols)
+    # def finalize_plan(self):
+    #     """Triggers for each symbol using the pre-calculated macro."""
+    #
+    #     all_plans = {}
+    #
+    #     for symbol in self.state.watchlist:
+    #         print(f"--- Analyzing {symbol} using Global Macro context ---")
+    #         #     # ISOLATION: Dynamic path based on symbol prevents memory bleed
+    #         os.environ["CREWAI_STORAGE_DIR"] = f"{os.getenv('MEMORY_DB_BASE_DIR')}/strategy/tickers/{symbol}/"
+    #
+    #         result = StrategyCrew().crew().kickoff(inputs={
+    #                     "symbol": symbol,
+    #                     "trade_date": self.state.trade_date,
+    #                     "start_date": self.state.start_date,
+    #                     "end_date": self.state.end_date,
+    #                     "macro_report": self.state.macro_context,
+    #                     "analyst_dossier": self.state.ticker_analysis_results[symbol],
+    #                    "equity": self.state.equity,
+    #                    "risk": str(float(self.state.risk) * 100),
+    #                 })
+    #
+    #         all_plans[symbol] = result
+    #
+    #     return all_plans
+
     @listen(analyze_all_symbols)
     def finalize_plan(self):
         """Triggers for each symbol using the pre-calculated macro."""
 
-        all_plans = {}
+        os.environ["CREWAI_STORAGE_DIR"] = f"{os.getenv('MEMORY_DB_BASE_DIR')}/strategy/"
 
-        for symbol in self.state.watchlist:
-            print(f"--- Analyzing {symbol} using Global Macro context ---")
-            #     # ISOLATION: Dynamic path based on symbol prevents memory bleed
-            os.environ["CREWAI_STORAGE_DIR"] = f"{os.getenv('MEMORY_DB_BASE_DIR')}/strategy/tickers/{symbol}/"
+        # for symbol in self.state.watchlist:
+        #     print(f"--- Analyzing {symbol} using Global Macro context ---")
+        #     #     # ISOLATION: Dynamic path based on symbol prevents memory bleed
 
-            result = StrategyCrew().crew().kickoff(inputs={
-                        "symbol": symbol,
-                        "trade_date": self.state.trade_date,
-                        "start_date": self.state.start_date,
-                        "end_date": self.state.end_date,
-                        "macro_report": self.state.macro_context,
-                        "analyst_dossier": self.state.ticker_analysis_results[symbol],
-                       "equity": self.state.equity,
-                       "risk": str(float(self.state.risk) * 100),
-                    })
 
-            all_plans[symbol] = result
+        result = StrategyCrew().crew().kickoff(inputs={
+                # "symbol": symbol,
+                "trade_date": self.state.trade_date,
+                "start_date": self.state.start_date,
+                "end_date": self.state.end_date,
+                "macro_report": self.state.macro_context,
+                "all_symbol_reports": "\n---\n".join(self.state.ticker_analysis_results.values()),
+                "equity": self.state.equity,
+                "risk": str(float(self.state.risk) * 100),
+            })
 
-        return all_plans
+
+        return result
 
 
 # TODO make sure no future look
 # TODO teach to learn based on future look for swing trading both backtesting and daily runs
+
+
+def run():
+    """Entry point for the crew - runs with default parameters"""
+    run_multi_symbol(watchlist=["AAPL"], trade_date="2025-01-07")
 
 
 def run_multi_symbol(watchlist: list, trade_date: str):
@@ -162,14 +193,33 @@ def run_multi_symbol(watchlist: list, trade_date: str):
     flow.state.watchlist = watchlist
     final_report = flow.kickoff()
 
-    for symbol, final_report in final_report.items():
+    # for symbol, final_report in final_report.items():
+    #     report_dir = Path(os.getenv("FINAL_REPORT_BASE_DIR")) / symbol
+    #     report_dir.mkdir(parents=True, exist_ok=True)
+    #     file_path = report_dir / f"{trade_date}_{symbol}_report.json"
+    #     with open(file_path, "w") as f:
+    #         f.write(str(final_report))
+
+    for symbol, final_report in flow.state.ticker_analysis_results.items():
         report_dir = Path(os.getenv("FINAL_REPORT_BASE_DIR")) / symbol
         report_dir.mkdir(parents=True, exist_ok=True)
         file_path = report_dir / f"{trade_date}_{symbol}_report.json"
         with open(file_path, "w") as f:
             f.write(str(final_report))
 
+    report_dir = Path(os.getenv("FINAL_REPORT_BASE_DIR"))
+    report_dir.mkdir(parents=True, exist_ok=True)
+    file_path = report_dir / f"{trade_date}_final_report.json"
+    with open(file_path, "w") as f:
+        f.write(str(final_report))
+
+
+
     # TODO add simple extract information from the report as dataframe (symbol, signal, stop loss, take profit etc.)
+    try:
+        report_df = pd.DataFrame.from_records(final_report)
+    except Exception as e:
+        print(e)
 
 
 if __name__ == "__main__":

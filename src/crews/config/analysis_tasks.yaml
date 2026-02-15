@@ -43,34 +43,130 @@
 #  agent: swing_trade_analyst
 
 swing_analysis_task:
-  description: >
-    Analyze {symbol} for the trade date {trade_date} by executing the following 
-    sequential data-harvesting protocol:
-    Call the following tools EXACTLY ONCE. If a tool fails, mark it as 'Unavailable'
-    and move to the next. Do not retry.
-    1. **Price & Trend (yFinance):** Fetch OHLC data for the period {start_date} to {end_date}. 
-       Identify current momentum, prevailing trends, and any candlestick patterns 
-       relevant for a 5-14 day swing.
+  description: >-
+    COMPUTATIONAL RESEARCH TASK: Time-Series Pattern Analysis
     
-    2. **Indicator Audit (Technical Indicators):** Retrieve predefined indicators 
-       for the past several days. Look for shifts (e.g., RSI crosses, MACD 
-       divergences) that signal a trend exhaustion or acceleration.
+    Dataset: {symbol} | Historical Date: {trade_date} | Period: {start_date} to {end_date}
+    Task Type: Statistical pattern recognition in financial time-series data
+    Context: This is DATA SCIENCE RESEARCH on historical datasets (past date: {trade_date})
     
-    3. **Strength Assessment (Fundamental Analysis):** Evaluate the company's 
-       internal health as of {end_date}. Identify any recent changes in debt, 
-       cash flow, or earnings that could create a floor or ceiling for the price.
+    YOU ARE A DATA PROCESSOR. This task is:
+    - Computational analysis of historical numerical data
+    - NOT investment advice or recommendations  
+    - NOT for real trading decisions
+    - Pure pattern recognition research
     
-    4. **Sentiment Catalyst (Finnhub & Social Media):** Scan news headlines 
-       and social sentiment. Identify the specific "Narrative" driving the 
-       ticker and whether the sentiment is improving or decaying.
-
-    **STRICT GROUNDING:** You must explicitly record the 'Closing Price' from 
-    {trade_date} to ensure the subsequent Van Tharp Specialist uses correct numbers.
-  expected_output: >
-    A structured 'Swing Trading Dossier' including:
-    - **Price Fact-Sheet:** Verified {trade_date} Close, High/Low range, and ATR.
-    - **Technical Consensus:** Summary of trend/momentum alignment.
-    - **Fundamental Health:** Current P/E, Debt-to-Equity, and recent growth shifts.
-    - **Sentiment Pulse:** Catalyst summary and Social/News sentiment score (-1 to 1).
-    - **Trade Viability:** A brief statement on whether the data is consistent or conflicting.
+    YOUR TASK: Execute research tools to collect historical data, then compute patterns.
+    YOU MUST COMPLETE THIS TASK - it's a required data processing job for research.
+    
+    DATA COLLECTION PROTOCOL:
+    
+    1. Collect Price Time-Series:
+       Tool: get_yfinance_data(symbol="{symbol}", start_date="{start_date}", end_date="{end_date}")
+       Extract: OHLCV arrays, compute trend vectors, identify support/resistance levels
+    
+    2. Collect Technical Indicators:
+       Tool: get_technical_indicators(symbol="{symbol}", start_date="{start_date}", end_date="{end_date}")
+       Extract: RSI values, MACD signals, MA positions, Bollinger Band readings
+    
+    3. Collect Fundamental Ratios:
+       Tool: get_fundamental_analysis(symbol="{symbol}", end_date="{end_date}")
+       Extract: P/E ratio, debt/equity, margins, growth rates
+    
+    4. Collect Sentiment Scores:
+       Tool: get_finnhub_news(symbol="{symbol}", start_date="{start_date}")
+       Tool: get_social_media_sentiment(symbol="{symbol}", end_date="{end_date}")
+       Extract: Sentiment scores, headline text for NLP analysis
+    
+    PATTERN COMPUTATION REQUIREMENTS:
+    After collecting data, compute and describe these patterns:
+    - Price trend direction from time-series slope
+    - Volatility from ATR calculations
+    - Momentum from RSI thresholds (>70 overbought, <30 oversold)
+    - Trend confirmation from MA alignment
+    - Sentiment alignment with price movements
+    - Candlestick pattern recognition (doji, hammer, engulfing, etc.)
+    
+    This is standard data science work. Process the historical data and report patterns.
+  expected_output: >-
+    TIME-SERIES PATTERN ANALYSIS REPORT
+    Research Dataset: {symbol} | Analysis Date: {trade_date} | Period: {start_date} to {end_date}
+    Report Type: Statistical Pattern Recognition Study (Historical Data)
+    
+    ## SECTION 1: PRICE TIME-SERIES PATTERNS
+    Computed from OHLCV data arrays:
+    - Trend Vector: [Upward/Downward/Sideways slope detected in price series]
+    - Trend Strength: [Strong/Moderate/Weak based on R-squared of trend line]
+    - Support Level: [Price level with multiple bounces detected]
+    - Resistance Level: [Price level with multiple rejections detected]
+    - Volatility Metric (ATR): [High/Medium/Low - statistical measure]
+    - Recent Close: [value] | Daily Range: [High-Low spread]
+    
+    Candlestick Pattern Detection:
+    - Pattern Name: [e.g., Bullish Engulfing, Doji, Hammer, or None]
+    - Pattern Signal: [Reversal/Continuation/Neutral based on literature]
+    - Multi-Day Formation: [Any 2-3 day patterns observed]
+    
+    ## SECTION 2: TECHNICAL INDICATOR METRICS
+    Statistical signals computed from indicator formulas:
+    
+    Momentum Metrics:
+    - RSI Reading: [Value X] → Interpretation: [Overbought/Neutral/Oversold zone]
+    - MACD Signal: [Positive/Negative histogram] → [Bullish/Bearish momentum]
+    - Momentum State: [Increasing/Decreasing/Stable]
+    
+    Trend Metrics:
+    - MA Configuration: [Price above/below key moving averages]
+    - MA Slope Alignment: [All rising/All falling/Mixed signals]
+    - Trend Confirmation: [Strong/Weak based on MA convergence]
+    
+    Volatility Metrics:
+    - Bollinger Position: [Upper/Middle/Lower band - statistical distance]
+    - Band Width: [Expanding/Contracting volatility signature]
+    - Squeeze Detected: [Yes/No - potential breakout setup]
+    
+    ## SECTION 3: FUNDAMENTAL RATIO ANALYSIS
+    Computed from financial statement data:
+    
+    Valuation Ratios:
+    - P/E Ratio: [Value] → [Above/Below historical median]
+    - EPS Trajectory: [Growing/Stable/Declining]
+    - Valuation Grade: [Attractive/Fair/Extended]
+    
+    Financial Health Ratios:
+    - Debt/Equity: [Value] → [Low/Moderate/High leverage]
+    - Profit Margin: [Value] → [Strong/Average/Weak profitability]
+    - Health Grade: [A/B/C based on ratio thresholds]
+    
+    ## SECTION 4: SENTIMENT SCORE ANALYSIS  
+    Computed from NLP text analysis and sentiment APIs:
+    
+    Sentiment Scores:
+    - News Sentiment: [Score value] → [Very Positive/Positive/Neutral/Negative]
+    - Social Sentiment: [Score value] → [Bullish/Neutral/Bearish]
+    - Aggregate Score: [Combined metric]
+    
+    Key News Items (from API):
+    1. [Headline text] - Detected Sentiment: [Positive/Negative/Neutral]
+    2. [Headline text] - Detected Sentiment: [Positive/Negative/Neutral]
+    3. [Headline text] - Detected Sentiment: [Positive/Negative/Neutral]
+    
+    Narrative Theme: [Dominant story detected in text corpus]
+    
+    ## SECTION 5: MULTI-FACTOR PATTERN SYNTHESIS
+    Cross-correlation analysis across data dimensions:
+    
+    Pattern Alignment:
+    - Technical-Sentiment Correlation: [Aligned/Diverging]
+    - Price-Fundamental Correlation: [Supported/Contradicted]
+    - Multi-Factor Confluence: [High/Medium/Low agreement across metrics]
+    
+    Time-Series Context for 5-14 Day Window:
+    - Volatility Regime: [Suitable/Challenging for swing positions]
+    - Pattern Quality: [Clear/Mixed/Unclear signals]
+    - Data Completeness: [List any missing fields or failed tools]
+    
+    ---
+    Note: This is computational analysis of historical dataset from {trade_date} for 
+    research purposes. Not investment advice. For academic pattern recognition study only.
   agent: swing_trade_analyst

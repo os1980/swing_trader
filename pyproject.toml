@@ -11,11 +11,15 @@ dependencies = [
     "langchain-ollama>=1.0.1",
     "ta-lib>=0.4.24",
     "pyyaml>=6.0",
+    "apscheduler>=3.11.0",
     "beautifulsoup4>=4.13.5",
     "chromadb>=1.1.1",
     "crewai>=1.8.0",
     "crewai-tools>=1.8.0",
     "python-dotenv>=0.9.9",
+    "email-validator>=2.3.0",
+    "fastapi>=0.115.0",
+    "fastapi-sso>=0.16.0",
     "finnhub-python>=2.4.26",
     "langchain>=1.2.3",
     "langchain-community>=0.4.1",
@@ -38,16 +42,16 @@ dependencies = [
 [tool.uv]
 package = true
 
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [project.scripts]
-ai_trading_crew = "swing_trader.src.main:run"
+ai_trading_crew = "src.main:run"
 run_crew = "src.main:run"
-train = "swing_trader.src.backtest:train"
-replay = "swing_trader.src.main:replay"
-test = "swing_trader.src.main:test"
-#
-#[build-system]
-#requires = [
-#    "hatchling",
-#]
-#build-backend = "hatchling.build"
+train = "src.backtest:train"
+replay = "src.main:replay"
+test = "src.main:test"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

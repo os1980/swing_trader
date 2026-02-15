@@ -44,22 +44,86 @@
 #    A structured JSON object for trade execution.
 #  agent: strategy_manager
 
+#portfolio_analysis_task:
+#  description: >
+#    Review the collection of analysis dossiers for all symbols: {all_symbol_reports}.
+#
+#    1. **Rank by Expectancy:** For each symbol, calculate/verify the Expectancy
+#       using $E = (P_w \times \text{Reward}) - ((1 - P_w) \times 1)$.
+#    2. **Filter:** Discard any setup where $E < 0.2$ or the data appears
+#       to be from the wrong year (hallucinated).
+#    3. **Capital Allocation:** You have a total portfolio of ${equity}.
+#       Risk exactly {risk}% per trade. If multiple stocks have high E-values,
+#       include them all in the list, but rank them from highest E to lowest.
+#    4. **JSON Construction:** Create a list of JSON objects where each object
+#       follows the Tharpian Trade Signal schema.
+#  expected_output: >
+#    A RAW JSON list of objects. Each object must include:
+#    "symbol", "signal" (BUY/HOLD), "market_type", "setup",
+#    "expectancy_scorecard", and "position_sizing".
+#    If no stocks meet the criteria, return an empty list [].
+#  agent: portfolio_strategy_manager
+
 portfolio_analysis_task:
   description: >
-    Review the collection of analysis dossiers for all symbols: {all_symbol_reports}.
+    Review the following inputs for the trade date {trade_date}:
     
-    1. **Rank by Expectancy:** For each symbol, calculate/verify the Expectancy 
-       using $E = (P_w \times \text{Reward}) - ((1 - P_w) \times 1)$.
-    2. **Filter:** Discard any setup where $E < 0.2$ or the data appears 
-       to be from the wrong year (hallucinated).
-    3. **Capital Allocation:** You have a total portfolio of ${equity}. 
-       Risk exactly {risk}% per trade. If multiple stocks have high E-values, 
-       include them all in the list, but rank them from highest E to lowest.
-    4. **JSON Construction:** Create a list of JSON objects where each object 
-       follows the Tharpian Trade Signal schema.
+    **INPUT 1: MACRO_REPORT**
+    {macro_report}
+    
+    **INPUT 2: STOCK_DOSSIERS**
+    {all_symbol_reports}
+    
+    **EXECUTION STEPS:**
+    1. **Define the Environment:** Based on the MACRO_REPORT, identify the 
+       current Market Type. Determine if the environment is conducive to 
+       Long positions, Short positions, or Cash (HOLD).
+    2. **Calculate Expectancy ($E$):** For each symbol in the dossiers, 
+       calculate $$E = (P_w \times \text{Average R Win}) - ((1 - P_w) \times 1)$$.
+       Adjust $P_w$ (Win Probability) downward if the stock trend 
+       conflicts with the Macro regime.
+    3. **Steel-Man Ranking:** Rank all symbols by their adjusted Expectancy.
+    4. **Position Sizing:** Calculate the number of shares such that 1R equals
+       exactly {risk}% of a ${equity} account.
+#    4. **Allocation:** Distribute {risk}% risk units (1R) only to the
+#       top-tier setups that align with the Macro direction.
   expected_output: >
-    A RAW JSON list of objects. Each object must include:
-    "symbol", "signal" (BUY/HOLD), "market_type", "setup", 
-    "expectancy_scorecard", and "position_sizing".
-    If no stocks meet the criteria, return an empty list [].
+    A valid JSON object that EXACTLY matches the PortfolioResponse schema:
+    {
+      "trades": [
+        {
+          "symbol": "string",
+          "trade_date": "YYYY-MM-DD",
+          "signal": "BUY|HOLD|SELL",
+          "market_type": "string (e.g., Bull Quiet)",
+          "trade_setup": {
+            "entry_price": float or null,
+            "stop_loss": float or null,
+            "profit_target": float or null,
+            "r_multiple_target": float or null
+          },
+          "expectancy_scorecard": {
+            "win_probability": float (0.0-1.0),
+            "r_ratio": float,
+            "expectancy_value": float
+          },
+          "position_sizing": {
+            "shares": int,
+            "risk_per_trade": float,
+            "total_account_value": float
+          },
+          "rationale": {
+            "bull_case": "string - REQUIRED, brief argument supporting the trade",
+            "bear_case": "string - REQUIRED, brief counter-argument against the trade"
+          }
+        }
+      ],
+      "total_portfolio_risk_percent": float
+    }
+    
+    CRITICAL FORMATTING RULES:
+    - Return ONLY valid JSON. No markdown, no explanations, no text before or after.
+    - Both "bull_case" and "bear_case" MUST be non-empty strings, never null or omitted.
+    - If signal is HOLD, still provide both bull_case and bear_case explaining why you hold.
+    - If no trades meet criteria, return: {"trades": [], "total_portfolio_risk_percent": 0.0}
   agent: portfolio_strategy_manager

@@ -1,6 +1,6 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from helpers.utils import local_llm_deep, local_embedder
+from ..helpers.utils import local_llm_deep, local_embedder
 from src.tools.trading_tools import TOOLS
 
 
