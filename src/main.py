@@ -37,6 +37,8 @@ from pydantic import BaseModel
 from .crews.macro_crew import MacroCrew
 from .crews.analysis_crew import AnalysisCrew
 from .crews.strategy_crew import StrategyCrew
+from .helpers import db
+from .helpers.utils import CONFIG
 import datetime
 
 # Silence only this exact family of pydantic serialization warnings
@@ -191,33 +193,65 @@ def run_multi_symbol(watchlist: list, trade_date: str):
     flow.state.start_date = start_date
     flow.state.end_date = end_date
     flow.state.watchlist = watchlist
-    final_report = flow.kickoff()
 
-    # for symbol, final_report in final_report.items():
-    #     report_dir = Path(os.getenv("FINAL_REPORT_BASE_DIR")) / symbol
-    #     report_dir.mkdir(parents=True, exist_ok=True)
-    #     file_path = report_dir / f"{trade_date}_{symbol}_report.json"
-    #     with open(file_path, "w") as f:
-    #         f.write(str(final_report))
+    run_id = db.new_run_id()
+    persist = db.is_enabled()
+    if persist:
+        # Runs before kickoff so a bad ALGO_TRADING_DATABASE_URL fails before any LLM time is spent.
+        db.start_run(
+            run_id,
+            trade_date=trade_date,
+            start_date=start_date,
+            end_date=end_date,
+            watchlist=watchlist,
+            equity=float(flow.state.equity),
+            risk_per_trade=float(flow.state.risk),
+            llm_model=CONFIG["deep_think_llm"],
+        )
+        print(f"Postgres run_id: {run_id}")
+    else:
+        print("ALGO_TRADING_DATABASE_URL is not set; results are written to JSON files only.")
 
-    for symbol, final_report in flow.state.ticker_analysis_results.items():
-        report_dir = Path(os.getenv("FINAL_REPORT_BASE_DIR")) / symbol
+    try:
+        strategy_result = flow.kickoff()
+
+        for symbol, analysis_report in flow.state.ticker_analysis_results.items():
+            report_dir = Path(os.getenv("FINAL_REPORT_BASE_DIR")) / symbol
+            report_dir.mkdir(parents=True, exist_ok=True)
+            file_path = report_dir / f"{trade_date}_{symbol}_report.json"
+            with open(file_path, "w") as f:
+                f.write(str(analysis_report))
+
+        report_dir = Path(os.getenv("FINAL_REPORT_BASE_DIR"))
         report_dir.mkdir(parents=True, exist_ok=True)
-        file_path = report_dir / f"{trade_date}_{symbol}_report.json"
+        file_path = report_dir / f"{trade_date}_final_report.json"
         with open(file_path, "w") as f:
-            f.write(str(final_report))
+            f.write(db.raw_output(strategy_result))
 
-    report_dir = Path(os.getenv("FINAL_REPORT_BASE_DIR"))
-    report_dir.mkdir(parents=True, exist_ok=True)
-    file_path = report_dir / f"{trade_date}_final_report.json"
-    with open(file_path, "w") as f:
-        f.write(str(final_report))
-
-
+        if persist:
+            summary = db.finish_run(
+                run_id,
+                trade_date=trade_date,
+                watchlist=watchlist,
+                macro_context=flow.state.macro_context,
+                analyses=flow.state.ticker_analysis_results,
+                strategy_result=strategy_result,
+            )
+            print(f"Postgres run {run_id}: {summary.status}, {summary.signals_written} signal(s) written")
+            for note in summary.skipped:
+                print(f"  skipped {note}")
+            for note in summary.date_mismatches:
+                print(f"  trade_date mismatch, stored with run date: {note}")
+            if summary.error_message:
+                print(f"  {summary.error_message}")
+    except Exception as exc:
+        if persist:
+            db.fail_run(run_id, f"{type(exc).__name__}: {exc}")
+        raise
 
     # TODO add simple extract information from the report as dataframe (symbol, signal, stop loss, take profit etc.)
     try:
-        report_df = pd.DataFrame.from_records(final_report)
+        report_df = pd.DataFrame.from_records(strategy_result)
     except Exception as e:
         print(e)
 
