@@ -26,7 +26,7 @@ class StrategyCrew():
             agents=self.agents,
             tasks=self.tasks,
             process=Process.sequential,
-            memory=True, # Shared whiteboard for this crew
+            memory=True, # Enable learning and improvement over time
             embedder=local_embedder,
             share_crew=False,
         )

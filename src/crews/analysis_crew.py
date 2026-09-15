@@ -4,6 +4,8 @@ from ..helpers.utils import local_llm_deep, local_embedder
 from src.tools.trading_tools import TOOLS
 
 
+USE_MEMORY = False  # Set to False to disable memory and test if the issue is memory-related
+
 @CrewBase
 class AnalysisCrew():
 
@@ -26,7 +28,7 @@ class AnalysisCrew():
         return Agent(config=self.agents_config['swing_trade_analyst'],
                      tools=self.agent_tools,
                      llm=self.llm,
-                     memory=True)
+                     memory=USE_MEMORY)
 
     @task
     def swing_analysis_task(self) -> Task:
@@ -38,7 +40,7 @@ class AnalysisCrew():
             agents=self.agents,
             tasks=self.tasks,
             process=Process.sequential,
-            memory=True, # Shared whiteboard for this crew
+            memory=USE_MEMORY, # Shared whiteboard for this crew
             embedder=local_embedder,
             share_crew=False,
             verbose=True

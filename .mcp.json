@@ -1,0 +1,50 @@
+{
+  "mcpServers": {
+    "finnhub": {
+      "command": "uvx",
+      "args": [
+        "mcp-finnhub"
+      ],
+      "env": {
+        "FINNHUB_API_KEY": "${FINNHUB_API_KEY}"
+      }
+    },
+    "yahoo-finance": {
+      "command": "uvx",
+      "args": [
+        "mcp-yahoo-finance"
+      ]
+    },
+    "tavily": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tavily-mcp@latest"
+      ],
+      "env": {
+        "TAVILY_API_KEY": "${TAVILY_API_KEY}"
+      }
+    },
+    "postgres": {
+      "command": "uvx",
+      "args": [
+        "--with",
+        "mcp<2",
+        "postgres-mcp",
+        "--access-mode=restricted"
+      ],
+      "env": {
+        "DATABASE_URI": "${ALGO_TRADING_DATABASE_URL}"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "./final_reports",
+        "./knowledge"
+      ]
+    }
+  }
+}

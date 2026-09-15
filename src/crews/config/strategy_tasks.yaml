@@ -65,8 +65,8 @@
 #  agent: portfolio_strategy_manager
 
 portfolio_analysis_task:
-  description: >
-    Review the following inputs for the trade date {trade_date}:
+  description: >-
+    PROCESS STOCK DOSSIERS AND GENERATE PORTFOLIO JSON
     
     **INPUT 1: MACRO_REPORT**
     {macro_report}
@@ -74,56 +74,84 @@ portfolio_analysis_task:
     **INPUT 2: STOCK_DOSSIERS**
     {all_symbol_reports}
     
-    **EXECUTION STEPS:**
-    1. **Define the Environment:** Based on the MACRO_REPORT, identify the 
-       current Market Type. Determine if the environment is conducive to 
-       Long positions, Short positions, or Cash (HOLD).
-    2. **Calculate Expectancy ($E$):** For each symbol in the dossiers, 
-       calculate $$E = (P_w \times \text{Average R Win}) - ((1 - P_w) \times 1)$$.
-       Adjust $P_w$ (Win Probability) downward if the stock trend 
-       conflicts with the Macro regime.
-    3. **Steel-Man Ranking:** Rank all symbols by their adjusted Expectancy.
-    4. **Position Sizing:** Calculate the number of shares such that 1R equals
-       exactly {risk}% of a ${equity} account.
-#    4. **Allocation:** Distribute {risk}% risk units (1R) only to the
-#       top-tier setups that align with the Macro direction.
-  expected_output: >
-    A valid JSON object that EXACTLY matches the PortfolioResponse schema:
-    {
-      "trades": [
-        {
-          "symbol": "string",
-          "trade_date": "YYYY-MM-DD",
-          "signal": "BUY|HOLD|SELL",
-          "market_type": "string (e.g., Bull Quiet)",
-          "trade_setup": {
-            "entry_price": float or null,
-            "stop_loss": float or null,
-            "profit_target": float or null,
-            "r_multiple_target": float or null
-          },
-          "expectancy_scorecard": {
-            "win_probability": float (0.0-1.0),
-            "r_ratio": float,
-            "expectancy_value": float
-          },
-          "position_sizing": {
-            "shares": int,
-            "risk_per_trade": float,
-            "total_account_value": float
-          },
-          "rationale": {
-            "bull_case": "string - REQUIRED, brief argument supporting the trade",
-            "bear_case": "string - REQUIRED, brief counter-argument against the trade"
-          }
-        }
-      ],
-      "total_portfolio_risk_percent": float
-    }
+    **TASK SCOPE:**
+    Process the stocks provided in INPUT 2 for this specific analysis.
+    Each dossier is marked with "TECHNICAL DATA REPORT: [SYMBOL]" header.
     
-    CRITICAL FORMATTING RULES:
-    - Return ONLY valid JSON. No markdown, no explanations, no text before or after.
-    - Both "bull_case" and "bear_case" MUST be non-empty strings, never null or omitted.
-    - If signal is HOLD, still provide both bull_case and bear_case explaining why you hold.
-    - If no trades meet criteria, return: {"trades": [], "total_portfolio_risk_percent": 0.0}
+    **EXECUTION PROTOCOL:**
+    
+    1. **Parse Input Dossiers:**
+       - Count occurrences of "TECHNICAL DATA REPORT:" in INPUT 2
+       - Extract the symbol name after each header
+       - This gives you the complete list of stocks to process
+    
+    2. **Assess Market Context:**
+       - Read MACRO_REPORT to determine market type and regime
+       - Use this as filter for win probability adjustments
+    
+    3. **Calculate Metrics for Each Stock:**
+       - For each symbol extracted in step 1, read its dossier
+       - Extract: entry price, stop loss, target, ATR, sentiment, fundamentals
+       - Calculate: win_probability, r_ratio, expectancy_value, position_size
+    
+    4. **Generate Trade Objects:**
+       - Create one trade object per symbol extracted in step 1
+       - Rank by expectancy if multiple stocks
+    
+    5. **Output JSON:**
+       - trades array must contain exactly the symbols from INPUT 2
+       - No additions, no omissions
+    
+    **KEY PRINCIPLE:**
+    Your output is determined by your input parameters for THIS task.
+    The stocks in your output = the stocks in INPUT 2.
+    
+    **OUTPUT CONSTRAINT:**
+    - Output one trade object per dossier received in INPUT 2
+    - Do NOT fabricate trades for symbols not in INPUT 2
+  expected_output: >-
+    JSON object following PortfolioResponse schema.
+    
+    The "trades" array must contain exactly the stocks found in INPUT 2 (STOCK_DOSSIERS).
+    
+    **OUTPUT MAPPING:**
+    - Count "TECHNICAL DATA REPORT:" headers in INPUT 2
+    - Extract symbol from each header
+    - Output one trade object per extracted symbol
+    - trades array length = number of headers in INPUT 2
+    
+    **JSON STRUCTURE:**
+    {{
+      "trades": [
+        {{
+          "symbol": "[symbol from INPUT 2 header]",
+          "trade_date": "{trade_date}",
+          "signal": "BUY or HOLD",
+          "market_type": "[from macro report]",
+          "trade_setup": {{
+            "entry_price": [from dossier],
+            "stop_loss": [from dossier],
+            "profit_target": [from dossier],
+            "r_multiple_target": [calculated]
+          }},
+          "expectancy_scorecard": {{
+            "win_probability": [calculated 0.0-1.0],
+            "r_ratio": [calculated],
+            "expectancy_value": [calculated]
+          }},
+          "position_sizing": {{
+            "shares": [calculated],
+            "risk_per_trade": {risk},
+            "total_account_value": {equity}
+          }},
+          "rationale": {{
+            "bull_case": "[extract from dossier]",
+            "bear_case": "[extract from dossier]"
+          }}
+        }}
+      ],
+      "total_portfolio_risk_percent": [sum of risk per trade]
+    }}
+    
+    If INPUT 2 is empty: {{"trades": [], "total_portfolio_risk_percent": 0.0}}
   agent: portfolio_strategy_manager
