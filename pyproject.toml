@@ -14,8 +14,8 @@ dependencies = [
     "apscheduler>=3.11.0",
     "beautifulsoup4>=4.13.5",
     "chromadb>=1.1.1",
-    "crewai>=1.8.0",
-    "crewai-tools>=1.8.0",
+    "crewai==1.8.1",
+    "crewai-tools==1.8.1",
     "python-dotenv>=0.9.9",
     "email-validator>=2.3.0",
     "fastapi>=0.115.0",
@@ -37,10 +37,16 @@ dependencies = [
     "typing-extensions>=4.15.0",
     "yfinance>=1.0",
     "litellm>=0.3.5",
+    "psycopg[binary]>=3.2",
 ]
 
 [tool.uv]
 package = true
+override-dependencies = [
+    # crewai-tools 1.8.1 declares lancedb<0.6, but PyPI deleted every lancedb release below 0.14.
+    # Only crewai_tools.adapters.lancedb_adapter imports it, and this project does not use that adapter.
+    "lancedb>=0.14",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]

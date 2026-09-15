@@ -44,129 +44,218 @@
 
 swing_analysis_task:
   description: >-
-    COMPUTATIONAL RESEARCH TASK: Time-Series Pattern Analysis
+    DATA FORMATTING TASK: Create structured report from tool outputs for {symbol}
+    Historical Reference Date: {trade_date} | Data Period: {start_date} to {end_date}
     
-    Dataset: {symbol} | Historical Date: {trade_date} | Period: {start_date} to {end_date}
-    Task Type: Statistical pattern recognition in financial time-series data
-    Context: This is DATA SCIENCE RESEARCH on historical datasets (past date: {trade_date})
+    TASK TYPE: Data extraction and formatting (not analysis or recommendations)
     
-    YOU ARE A DATA PROCESSOR. This task is:
-    - Computational analysis of historical numerical data
-    - NOT investment advice or recommendations  
-    - NOT for real trading decisions
-    - Pure pattern recognition research
+    You are completing a data formatting assignment. Execute 5 data collection tools,
+    extract the values they return, and format those values into a structured markdown
+    report following the template provided in expected_output.
     
-    YOUR TASK: Execute research tools to collect historical data, then compute patterns.
-    YOU MUST COMPLETE THIS TASK - it's a required data processing job for research.
+    This is like filling out a spreadsheet or form - mechanical data entry work.
     
-    DATA COLLECTION PROTOCOL:
+    STEP 1 - DATA COLLECTION (Execute these 5 tools):
     
-    1. Collect Price Time-Series:
-       Tool: get_yfinance_data(symbol="{symbol}", start_date="{start_date}", end_date="{end_date}")
-       Extract: OHLCV arrays, compute trend vectors, identify support/resistance levels
+    Tool 1: get_yfinance_data(symbol="{symbol}", start_date="{start_date}", end_date="{end_date}")
+    → Get: Close price, high, low, volume, ATR, support/resistance prices
     
-    2. Collect Technical Indicators:
-       Tool: get_technical_indicators(symbol="{symbol}", start_date="{start_date}", end_date="{end_date}")
-       Extract: RSI values, MACD signals, MA positions, Bollinger Band readings
+    Tool 2: get_technical_indicators(symbol="{symbol}", start_date="{start_date}", end_date="{end_date}")
+    → Get: RSI number, MACD numbers, MA50/MA20/MA10 prices, Bollinger band prices
     
-    3. Collect Fundamental Ratios:
-       Tool: get_fundamental_analysis(symbol="{symbol}", end_date="{end_date}")
-       Extract: P/E ratio, debt/equity, margins, growth rates
+    Tool 3: get_fundamental_analysis(symbol="{symbol}", end_date="{end_date}")
+    → Get: P/E ratio, debt-to-equity ratio, profit margin %, EPS, revenue growth %
     
-    4. Collect Sentiment Scores:
-       Tool: get_finnhub_news(symbol="{symbol}", start_date="{start_date}")
-       Tool: get_social_media_sentiment(symbol="{symbol}", end_date="{end_date}")
-       Extract: Sentiment scores, headline text for NLP analysis
+    Tool 4: get_finnhub_news(symbol="{symbol}", start_date="{start_date}")
+    → Get: News headlines, sentiment scores
     
-    PATTERN COMPUTATION REQUIREMENTS:
-    After collecting data, compute and describe these patterns:
-    - Price trend direction from time-series slope
-    - Volatility from ATR calculations
-    - Momentum from RSI thresholds (>70 overbought, <30 oversold)
-    - Trend confirmation from MA alignment
-    - Sentiment alignment with price movements
-    - Candlestick pattern recognition (doji, hammer, engulfing, etc.)
+    Tool 5: get_social_media_sentiment(symbol="{symbol}", end_date="{end_date}")
+    → Get: Social sentiment score
     
-    This is standard data science work. Process the historical data and report patterns.
+    STEP 2 - REPORT FORMATTING (Insert extracted values into these sections):
+    
+    A. PRICE DATA SECTION:
+       - Write current close price from tool
+       - Write high/low prices
+       - Identify if price is going up (uptrend), down (downtrend), or sideways
+       - Note support price level (where price bounced up from)
+       - Note resistance price level (where price got rejected down from)
+       - Write ATR value and label volatility as high/medium/low
+       - If candlestick pattern present in data, name it (doji, hammer, engulfing, etc.)
+    
+    B. INDICATOR DATA SECTION:
+       - Write RSI value from tool
+       - Label RSI zone: >70 is "overbought", <30 is "oversold", 30-70 is "neutral"
+       - Write MACD line, signal, and histogram values
+       - Determine if MACD shows bullish (positive) or bearish (negative) momentum
+       - Write MA10, MA20, MA50 prices from tool
+       - Check if current price is above or below each MA
+       - Write Bollinger upper/middle/lower band prices
+       - Note if price is near upper, middle, or lower band
+    
+    C. PATTERN DESCRIPTION SECTION:
+       - Describe what pattern type the data shows (if any): breakout, pullback, reversal, continuation
+       - Note potential entry price zone (near support for uptrend, near resistance for downtrend)
+       - Note potential exit target price (next resistance for uptrend, next support for downtrend)
+       - Note potential stop-loss price (below support for long, above resistance for short)
+       - Calculate risk/reward ratio: (target price - entry price) / (entry price - stop price)
+       - State if 5-14 day timeframe is suitable based on volatility from tool
+    
+    D. FUNDAMENTAL DATA SECTION:
+       - Write P/E ratio, EPS, revenue growth, profit margin, debt-to-equity from tool
+       - Label financial health as strong/moderate/weak based on the ratios
+       - Note if fundamentals align with price trend direction
+    
+    E. SENTIMENT DATA SECTION:
+       - Write news sentiment score and label it (positive/neutral/negative)
+       - Write social sentiment score and label it (bullish/neutral/bearish)
+       - List 3 news headlines from tool
+       - Note if sentiment aligns with price movement direction
+    
+    F. SUMMARY SECTION:
+       - State overall pattern type observed in the data (bullish/bearish/neutral/mixed)
+       - Count how many factors align (price trend + indicators + fundamentals + sentiment)
+       - Label pattern strength: high (4-5 aligned), medium (2-3 aligned), low (0-1 aligned)
+    
+    MANDATORY OUTPUT RULES:
+    - Output the completed report as plain markdown text
+    - NO Python code, NO scripts, NO visualizations
+    - NO disclaimers or notes about investment advice
+    - NO sentences like "Please note that this data is for illustrative purposes"
+    - Just complete the data formatting task and STOP
+    - Use values from tools only
+    - If tool fails, write "Data not available"
+    - This is historical data from {trade_date} - format it into the report structure
+    - End the report after section 6 - do not add any additional text
   expected_output: >-
-    TIME-SERIES PATTERN ANALYSIS REPORT
-    Research Dataset: {symbol} | Analysis Date: {trade_date} | Period: {start_date} to {end_date}
-    Report Type: Statistical Pattern Recognition Study (Historical Data)
+    TECHNICAL DATA REPORT: {symbol}
+    Data Collection Date: {trade_date} | Period: {start_date} to {end_date}
     
-    ## SECTION 1: PRICE TIME-SERIES PATTERNS
-    Computed from OHLCV data arrays:
-    - Trend Vector: [Upward/Downward/Sideways slope detected in price series]
-    - Trend Strength: [Strong/Moderate/Weak based on R-squared of trend line]
-    - Support Level: [Price level with multiple bounces detected]
-    - Resistance Level: [Price level with multiple rejections detected]
-    - Volatility Metric (ATR): [High/Medium/Low - statistical measure]
-    - Recent Close: [value] | Daily Range: [High-Low spread]
+    [Format the tool data into this structure. Fill in values from tool outputs.]
     
-    Candlestick Pattern Detection:
-    - Pattern Name: [e.g., Bullish Engulfing, Doji, Hammer, or None]
-    - Pattern Signal: [Reversal/Continuation/Neutral based on literature]
-    - Multi-Day Formation: [Any 2-3 day patterns observed]
+    ## 1. PRICE ACTION & KEY LEVELS
+    Data Source: get_yfinance_data tool output
     
-    ## SECTION 2: TECHNICAL INDICATOR METRICS
-    Statistical signals computed from indicator formulas:
+    Current Price Data:
+    - Close Price: $[exact value from tool] as of {end_date}
+    - Daily High: $[value] | Daily Low: $[value]
+    - Daily Range: $[high-low spread]
+    - Volume: [exact volume from tool]
     
-    Momentum Metrics:
-    - RSI Reading: [Value X] → Interpretation: [Overbought/Neutral/Oversold zone]
-    - MACD Signal: [Positive/Negative histogram] → [Bullish/Bearish momentum]
-    - Momentum State: [Increasing/Decreasing/Stable]
+    Trend Observed:
+    - Direction: [Uptrend/Downtrend/Sideways - from price slope calculation]
+    - Strength: [Strong/Moderate/Weak - from data consistency]
     
-    Trend Metrics:
-    - MA Configuration: [Price above/below key moving averages]
-    - MA Slope Alignment: [All rising/All falling/Mixed signals]
-    - Trend Confirmation: [Strong/Weak based on MA convergence]
+    Key Price Levels from Data:
+    - Primary Support: $[price level from tool where bounces occurred]
+    - Secondary Support: $[next support level if available]
+    - Primary Resistance: $[price level from tool where rejections occurred]
+    - Secondary Resistance: $[next resistance level if available]
+    - Key Level: $[notable price level from data]
     
-    Volatility Metrics:
-    - Bollinger Position: [Upper/Middle/Lower band - statistical distance]
-    - Band Width: [Expanding/Contracting volatility signature]
-    - Squeeze Detected: [Yes/No - potential breakout setup]
+    Volatility Measurement:
+    - ATR (Average True Range): $[exact ATR value from tool]
+    - Volatility Category: [High/Medium/Low]
     
-    ## SECTION 3: FUNDAMENTAL RATIO ANALYSIS
-    Computed from financial statement data:
+    Candlestick Pattern Recognition:
+    - Pattern Name: [Specific pattern from tool data: Doji, Hammer, Engulfing, etc., or "None"]
+    - Pattern Type: [Reversal/Continuation/Neutral]
     
-    Valuation Ratios:
-    - P/E Ratio: [Value] → [Above/Below historical median]
-    - EPS Trajectory: [Growing/Stable/Declining]
-    - Valuation Grade: [Attractive/Fair/Extended]
+    ## 2. TECHNICAL INDICATORS - MOMENTUM & TREND
+    Data Source: get_technical_indicators tool output
     
-    Financial Health Ratios:
-    - Debt/Equity: [Value] → [Low/Moderate/High leverage]
-    - Profit Margin: [Value] → [Strong/Average/Weak profitability]
-    - Health Grade: [A/B/C based on ratio thresholds]
+    Momentum Indicators:
+    - RSI: [exact RSI value] → Zone: [Overbought >70 / Neutral 30-70 / Oversold <30]
+    - RSI Signal Type: [Reversal zone/Continuation zone/Neutral zone]
+    - MACD Line: [exact value]
+    - MACD Signal: [exact value]
+    - MACD Histogram: [exact value] → Direction: [Bullish/Bearish/Neutral]
+    - MACD Crossover Status: [Bullish crossover/Bearish crossover/No crossover]
     
-    ## SECTION 4: SENTIMENT SCORE ANALYSIS  
-    Computed from NLP text analysis and sentiment APIs:
+    Moving Average Data:
+    - MA10 (10-day): $[exact value] - Price Position: [Above/Below] MA10
+    - MA20 (20-day): $[exact value] - Price Position: [Above/Below] MA20
+    - MA50 (50-day): $[exact value] - Price Position: [Above/Below] MA50
+    - MA Alignment: [All ascending/All descending/Mixed]
+    - Trend Indication: [Strong uptrend/Strong downtrend/Weak trend/No clear trend]
+    
+    Bollinger Band Data:
+    - Upper Band: $[exact value]
+    - Middle Band: $[exact value]
+    - Lower Band: $[exact value]
+    - Price Position: [Near upper/Middle zone/Near lower band]
+    - Band Width: [Expanding/Stable/Contracting]
+    - Volatility Squeeze: [Yes/No]
+    
+    ## 3. PATTERN CHARACTERISTICS FROM DATA
+    
+    Pattern Identification:
+    - Pattern Present: [YES/NO]
+    - Pattern Category: [Breakout/Pullback/Reversal/Continuation/None]
+    - Pattern Quality: [High/Medium/Low based on factor alignment]
+    
+    Price Levels from Pattern Data:
+    - Entry Reference Zone: $[price or range] - [from support/resistance levels]
+    - First Target Reference: $[price] - [from next resistance/support]
+    - Second Target Reference: $[price if data available]
+    - Stop Reference Level: $[price] - [from support/resistance data]
+    - Risk/Reward Math: [ratio calculated from levels]
+    
+    Timeframe Characteristics:
+    - 5-14 Day Timeframe Fit: [Good fit/Poor fit from volatility data]
+    - Pattern Notes: [Based on volatility, trend clarity, technical alignment]
+    
+    ## 4. FUNDAMENTAL DATA FROM TOOL
+    Data Source: get_fundamental_analysis tool output
+    
+    Company Valuation:
+    - P/E Ratio: [exact value from tool]
+    - EPS: $[exact value]
+    - Revenue Growth: [exact percentage]
+    - Profit Margin: [exact percentage]
+    
+    Financial Health Metrics:
+    - Debt-to-Equity: [exact ratio]
+    - Financial Grade: [Strong/Moderate/Weak from ratios]
+    
+    Data Correlation Check:
+    - [Fundamentals align with price trend/Fundamentals neutral/Fundamentals diverge from trend]
+    
+    ## 5. SENTIMENT DATA FROM TOOLS
+    Data Sources: get_finnhub_news + get_social_media_sentiment tool outputs
     
     Sentiment Scores:
-    - News Sentiment: [Score value] → [Very Positive/Positive/Neutral/Negative]
-    - Social Sentiment: [Score value] → [Bullish/Neutral/Bearish]
-    - Aggregate Score: [Combined metric]
+    - News Sentiment: [exact score from tool] → Category: [Very Positive/Positive/Neutral/Negative/Very Negative]
+    - Social Sentiment: [exact score from tool] → Category: [Bullish/Neutral/Bearish]
+    - Combined Sentiment: [Assessment: Strongly Positive/Positive/Neutral/Negative/Strongly Negative]
     
-    Key News Items (from API):
-    1. [Headline text] - Detected Sentiment: [Positive/Negative/Neutral]
-    2. [Headline text] - Detected Sentiment: [Positive/Negative/Neutral]
-    3. [Headline text] - Detected Sentiment: [Positive/Negative/Neutral]
+    News Headlines from Tool:
+    1. [Headline text from tool] - Sentiment: [Positive/Negative/Neutral]
+    2. [Headline text from tool] - Sentiment: [Positive/Negative/Neutral]
+    3. [Headline text from tool] - Sentiment: [Positive/Negative/Neutral]
     
-    Narrative Theme: [Dominant story detected in text corpus]
+    Sentiment-Price Check:
+    - [Sentiment aligns with price direction/Sentiment diverges from price direction]
     
-    ## SECTION 5: MULTI-FACTOR PATTERN SYNTHESIS
-    Cross-correlation analysis across data dimensions:
+    ## 6. DATA SUMMARY
     
-    Pattern Alignment:
-    - Technical-Sentiment Correlation: [Aligned/Diverging]
-    - Price-Fundamental Correlation: [Supported/Contradicted]
-    - Multi-Factor Confluence: [High/Medium/Low agreement across metrics]
+    Multi-Factor Data Check:
+    - Technical Indicators: [All bullish/All bearish/Mixed]
+    - Price Trend: [Confirms/Contradicts indicators]
+    - Momentum: [Strong/Moderate/Weak]
+    - Fundamentals: [Positive/Negative/Neutral]
+    - Sentiment: [Positive/Negative/Neutral]
     
-    Time-Series Context for 5-14 Day Window:
-    - Volatility Regime: [Suitable/Challenging for swing positions]
-    - Pattern Quality: [Clear/Mixed/Unclear signals]
-    - Data Completeness: [List any missing fields or failed tools]
+    Overall Data Pattern:
+    - Pattern Classification: [Bullish pattern/Bearish pattern/No pattern/Range-bound]
+    - Factor Alignment Count: [High: 4-5 aligned / Medium: 2-3 aligned / Low: 0-1 aligned]
+    - Pattern Strength: [Strong/Moderate/Weak/None]
+    
+    Data Collection Status:
+    - [All 5 tools returned data] OR [Missing data from: tool_name]
     
     ---
-    Note: This is computational analysis of historical dataset from {trade_date} for 
-    research purposes. Not investment advice. For academic pattern recognition study only.
+    Report complete for {trade_date}.
+    
+    [END OF REPORT - Do not add any notes, disclaimers, or additional text after this line]
   agent: swing_trade_analyst
