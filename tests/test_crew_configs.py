@@ -5,6 +5,7 @@ by running the flow, so the cheap failure modes are caught here instead.
 """
 from __future__ import annotations
 
+import json
 import re
 
 import pytest
@@ -87,11 +88,6 @@ def test_prompts_keep_the_no_lookahead_bound(crew):
     )
 
 
-@pytest.mark.xfail(
-    reason="Known defect from code review: the 'return only valid JSON, no markdown' rule "
-           "was deleted from the strategy task.",
-    strict=False,
-)
 def test_strategy_task_demands_bare_json():
     """Downstream parsing breaks on prose or markdown fences."""
     text = _text(load_config("strategy_tasks.yaml")).lower()
@@ -101,12 +97,51 @@ def test_strategy_task_demands_bare_json():
     )
 
 
-@pytest.mark.xfail(
-    reason="Known defect from code review: CrewAI 1.8.1 interpolates with str.replace, "
-           "so {{ }} is not unescaped and reaches the model literally.",
-    strict=False,
-)
 def test_task_templates_use_single_braces():
+    """CrewAI 1.8.1 interpolates with str.replace, so {{ }} reaches the model literally."""
     for crew in CREWS:
-        text = _text(load_config(f"{crew}_tasks.yaml"))
-        assert "{{" not in text, f"{crew}_tasks.yaml contains a doubled brace"
+        for suffix in ("agents", "tasks"):
+            text = _text(load_config(f"{crew}_{suffix}.yaml"))
+            assert "{{" not in text and "}}" not in text, (
+                f"{crew}_{suffix}.yaml contains a doubled brace"
+            )
+
+
+# Same pattern as crewai/utilities/string_utils.py in crewai 1.8.1.
+_CREWAI_VARIABLE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_\-]*)}")
+
+
+def _interpolate_like_crewai(template: str, inputs: dict) -> str:
+    for var in _CREWAI_VARIABLE.findall(template):
+        template = template.replace("{" + var + "}", str(inputs[var]))
+    return template
+
+
+def test_rendered_strategy_template_is_a_valid_portfolio_response():
+    """Render the JSON example the model sees, fill its [slots], and validate it.
+
+    This is the check that would have caught the doubled braces: the model copies the
+    shape of this example, so the example itself has to parse.
+    """
+    from src.helpers.trade_signals import PortfolioResponse
+
+    inputs = {
+        "trade_date": "2025-01-07", "start_date": "2024-10-09", "end_date": "2025-01-06",
+        "macro_report": "macro", "all_symbol_reports": "reports",
+        "equity": 10000, "risk": "1.0",
+    }
+    task = load_config("strategy_tasks.yaml")["portfolio_analysis_task"]
+    rendered = _interpolate_like_crewai(task["expected_output"], inputs)
+
+    start = rendered.index("{")
+    end = rendered.index("If INPUT 2 is empty")
+    example = rendered[start:end].strip()
+    # Bare [slot] placeholders stand for numbers; quoted ones are already strings.
+    example = re.sub(r"(?<![\"\w])\[[a-z][^\]\n]*\]", "1.0", example)
+    example = example.replace('"BUY or HOLD"', '"BUY"')
+
+    portfolio = PortfolioResponse.model_validate(json.loads(example))
+    assert portfolio.trades[0].trade_date == "2025-01-07"
+
+    empty = rendered[end:].split(":", 1)[1].strip()
+    assert PortfolioResponse.model_validate(json.loads(empty)).trades == []
