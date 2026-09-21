@@ -29,11 +29,15 @@ should keep those tests passing.
 ## Do not ask for values the tools cannot return
 
 The agents have six tools, in `src/tools/trading_tools.py`. `get_yfinance_data` returns only
-close prices, highs, lows, and dates. `get_technical_indicators` is meant to return RSI,
-MACD, Bollinger bands, ATR, and two moving averages, but every value is built with
-`float(series.tolist())`, which raises `TypeError` on a list, so the tool always returns
-`{"status": "no_data"}`. Until that is fixed, no prompt can rely on an indicator value. The
-Tavily and Finnhub tools return prose with no numeric score.
+close prices, highs, lows, and dates. `get_technical_indicators` returns the last-bar RSI(14),
+MACD line, Bollinger upper and lower bands, SMA(50), SMA(200) and ATR(14), plus `as_of` and
+`bars`. It does not return a MACD signal line or histogram, volume, or support and
+resistance levels. The Tavily and Finnhub tools return prose with no numeric score.
+
+The indicator math lives in `src/tools/indicators.py`. Flag a change there that drops the
+column flattening (stockstats mis-computes ATR on yfinance's two-level columns), drops the
+minimum-bars guard (without it a 61-bar mean is reported as SMA-200), or shortens the
+warm-up history in `get_technical_indicators`.
 
 Flag a report template that demands a value none of these produce, for example a moving
 average the indicator tool does not compute, a MACD signal line, a support or resistance
@@ -43,11 +47,14 @@ tool, never to add another instruction telling the model not to guess.
 
 ## Tool usage limits are per object, not per run
 
-The tools are module-level singletons with `max_usage_count=1`, and the count is never
-reset. After the first watchlist symbol, every later symbol gets a usage-limit error.
-Flag a change that keeps that pattern while adding symbols, and flag any instruction telling
-the agent to write "Data not available" on tool failure, which converts a hard failure into
-a plausible-looking empty report.
+CrewAI counts tool usage on the tool object, writes the count back to the original, and
+never resets it. Crews must get their tools from `build_tools(...)` inside the `@agent`
+method, which returns fresh objects per crew instance. Flag any module-level or class-level
+tool object shared across crews, or a crew that caches tools on the class: with
+`max_usage_count=1`, every watchlist symbol after the first would get a usage-limit error.
+
+Also flag any instruction telling the agent to write "Data not available" on tool failure,
+which converts a hard failure into a plausible-looking empty report.
 
 ## Strategy output must be bare JSON
 

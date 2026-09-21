@@ -35,7 +35,9 @@ make migrate   # apply db/migrations against $ALGO_TRADING_DATABASE_URL
 
 **Tests are offline by design.** `tests/` never calls an LLM, a database, or the network. It holds static checks on the crew YAML (required keys, `{placeholder}` names matching what `src/main.py` passes to each kickoff, the no-lookahead bound) plus unit tests on `trade_signals.py` and the pure helpers in `db.py`. Anything needing a live service belongs behind the `integration` marker. Run tests after editing prompts: a `{typo}` in YAML otherwise surfaces only after minutes of LLM time.
 
-**`xfail` markers document known defects.** Several tests are marked `xfail` with a reason tied to a code-review finding, for example the `{{` braces in `strategy_tasks.yaml` that CrewAI 1.8.1 does not unescape, and the deleted JSON-only rule. They are not flaky tests. Fix the defect, watch the test pass, then remove the marker.
+**`xfail` markers document known defects.** Some tests are marked `xfail` with a reason tied to a code-review finding, for example the strategy prompts having lost their `end_date` bound. They are not flaky tests. Fix the defect, watch the test pass, then remove the marker.
+
+**Tools are built per crew.** Crews call `build_tools(...)` from `src/tools/trading_tools.py` inside their `@agent` method. Never share tool objects across crews: CrewAI counts usage on the object and never resets it, so with `max_usage_count=1` a shared tool locks after the first symbol. Indicator math is in `src/tools/indicators.py`, kept free of CrewAI and network imports so CI can test it.
 
 **Lint is green; keep it that way.** `ruff check` passes on the whole repo. `src/main.py` is exempt from `E402` and import sorting because its import order is load-bearing: it sets environment variables and patches CrewAI tracing before importing crewai. The formatter has *not* been run repo-wide; pre-commit formats only the files in each commit, so the codebase converges without one giant diff. Install it with `uv run pre-commit install`.
 
@@ -69,7 +71,7 @@ State is a single Pydantic `TradingState` object (`symbol`, `trade_date`, `start
 
 Each crew lives in [src/crews/](src/crews/) with agent + task definitions split into YAML under [src/crews/config/](src/crews/config/) (`<crew>_agents.yaml` + `<crew>_tasks.yaml`). When editing crew behavior, the YAML files are usually the right place — the `.py` wrappers are thin.
 
-Crews share a common toolkit in [src/tools/trading_tools.py](src/tools/trading_tools.py) — six `@tool`-decorated functions:
+Crews share a common toolkit in [src/tools/trading_tools.py](src/tools/trading_tools.py) — six plain functions that `build_tools()` wraps as fresh CrewAI tools per crew:
 `get_yfinance_data`, `get_technical_indicators` (RSI/MACD/Bollinger/ATR/SMA via `ta-lib` + `stockstats`), `get_finnhub_news`, `get_social_media_sentiment` (Tavily), `get_fundamental_analysis` (Tavily), `get_macroeconomic_news` (Tavily).
 
 Output schemas live in [src/helpers/trade_signals.py](src/helpers/trade_signals.py): `TradeSignal` (per symbol) and `PortfolioResponse` (the StrategyCrew's required output).
