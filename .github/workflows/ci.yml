@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install check dependencies
+        # A full `uv sync` is not used here: ta-lib and pygraphviz need system
+        # libraries, and the tests deliberately import neither. Keep this list in
+        # step with what tests/ actually imports.
+        run: uv pip install --system pytest ruff pyyaml pydantic "psycopg[binary]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Test
+        # Offline by design: no Ollama, no database, no network.
+        run: pytest

@@ -1,0 +1,28 @@
+# Install once with: uv run pre-commit install
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        # Crew prompts are the main edit surface here; a broken YAML fails at kickoff.
+        files: ^(src/crews/config/|\.pre-commit-config\.yaml|\.github/)
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        # uv.lock is ~600 KB and belongs in version control.
+        args: [--maxkb=1024]
+      - id: detect-private-key
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
