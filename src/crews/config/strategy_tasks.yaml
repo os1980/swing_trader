@@ -110,6 +110,9 @@ portfolio_analysis_task:
     - Output one trade object per dossier received in INPUT 2
     - Do NOT fabricate trades for symbols not in INPUT 2
   expected_output: >-
+    Return ONLY the raw JSON object described below. No prose before or after it,
+    no markdown code fences, no comments. Any extra text breaks downstream parsing.
+
     JSON object following PortfolioResponse schema.
     
     The "trades" array must contain exactly the stocks found in INPUT 2 (STOCK_DOSSIERS).
@@ -121,37 +124,37 @@ portfolio_analysis_task:
     - trades array length = number of headers in INPUT 2
     
     **JSON STRUCTURE:**
-    {{
+    {
       "trades": [
-        {{
+        {
           "symbol": "[symbol from INPUT 2 header]",
           "trade_date": "{trade_date}",
           "signal": "BUY or HOLD",
           "market_type": "[from macro report]",
-          "trade_setup": {{
+          "trade_setup": {
             "entry_price": [from dossier],
             "stop_loss": [from dossier],
             "profit_target": [from dossier],
             "r_multiple_target": [calculated]
-          }},
-          "expectancy_scorecard": {{
+          },
+          "expectancy_scorecard": {
             "win_probability": [calculated 0.0-1.0],
             "r_ratio": [calculated],
             "expectancy_value": [calculated]
-          }},
-          "position_sizing": {{
+          },
+          "position_sizing": {
             "shares": [calculated],
             "risk_per_trade": {risk},
             "total_account_value": {equity}
-          }},
-          "rationale": {{
+          },
+          "rationale": {
             "bull_case": "[extract from dossier]",
             "bear_case": "[extract from dossier]"
-          }}
-        }}
+          }
+        }
       ],
       "total_portfolio_risk_percent": [sum of risk per trade]
-    }}
+    }
     
-    If INPUT 2 is empty: {{"trades": [], "total_portfolio_risk_percent": 0.0}}
+    If INPUT 2 is empty: {"trades": [], "total_portfolio_risk_percent": 0.0}
   agent: portfolio_strategy_manager

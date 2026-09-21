@@ -1,17 +1,15 @@
 import os
-
-# import pandas as pd
-from datetime import datetime  #, timedelta
+from collections.abc import Callable
+from datetime import datetime, timedelta
 
 import finnhub
 import yfinance as yf
 from crewai.tools import tool
 from langchain_tavily import TavilySearch
-from stockstats import wrap as stockstats_wrap
+
+from .indicators import compute_indicators
 
 
-# Now define your tools using the correct @tool decorator
-@tool("get_yfinance_data", max_usage_count=1)
 def get_yfinance_data(symbol: str, start_date: str, end_date: str) -> dict:
     """Retrieve the stock price data for a given ticker symbol from Yahoo Finance."""
     try:
@@ -29,42 +27,31 @@ def get_yfinance_data(symbol: str, start_date: str, end_date: str) -> dict:
     except Exception:
         return { "status": "no_data"} #f"Error fetching Yahoo Finance data: {e}"
 
-@tool("get_technical_indicators", max_usage_count=1)
+# Calendar days of history fetched before end_date so every indicator has enough bars.
+# SMA-200 needs 200 trading bars, about 290 calendar days; the rest covers holidays and
+# EMA warm-up for MACD. Only the lower bound moves: the data still stops at end_date.
+INDICATOR_WARMUP_DAYS = 400
+
 def get_technical_indicators(symbol: str, start_date: str, end_date: str) -> dict:
-    """Retrieve key technical indicators for swing trading."""
+    """Retrieve key technical indicators for swing trading, as of the last bar before end_date.
+
+    Returns the latest RSI(14), MACD, Bollinger upper and lower bands, SMA(50), SMA(200) and
+    ATR(14), plus `as_of` (the date of the last bar used) and `bars` (how many bars were
+    available). A value is null when there was not enough history to compute it honestly.
+    """
     try:
-        df = yf.download(symbol, start=start_date, end=end_date, progress=False)
+        end = datetime.strptime(end_date, "%Y-%m-%d")
+        warmup_start = (end - timedelta(days=INDICATOR_WARMUP_DAYS)).strftime("%Y-%m-%d")
+        fetch_start = min(start_date, warmup_start)
+        # yfinance treats `end` as exclusive, so the last bar is strictly before end_date.
+        df = yf.download(symbol, start=fetch_start, end=end_date, progress=False)
         if df.empty:
-            return { "status": "no_data"}
-
-        stock_df = stockstats_wrap(df)
-
-        return {
-            "rsi_14": float(stock_df["rsi_14"].tolist()),
-            "macd": float(stock_df["macd"].tolist()),
-            "boll_upper": float(stock_df["boll_ub"].tolist()),
-            "boll_lower": float(stock_df["boll_lb"].tolist()),
-            "sma_50": float(stock_df["close_50_sma"].tolist()),
-            "sma_200": float(stock_df["close_200_sma"].tolist()),
-            "atr_14": float(stock_df["atr_14"].tolist())
-        }
-
-        # return {
-        #     "rsi_14": float(stock_df["rsi_14"].iloc[-1]),
-        #     "macd": float(stock_df["macd"].iloc[-1]),
-        #     "boll_upper": float(stock_df["boll_ub"].iloc[-1]),
-        #     "boll_lower": float(stock_df["boll_lb"].iloc[-1]),
-        #     "sma_50": float(stock_df["close_50_sma"].iloc[-1]),
-        #     "sma_200": float(stock_df["close_200_sma"].iloc[-1]),
-        #     "atr_14": float(stock_df["atr_14"].iloc[-1])
-        # }
-        #
-
-    except Exception:
-        return { "status": "no_data"}
+            return {"status": "no_data"}
+        return compute_indicators(df)
+    except Exception as e:
+        return {"status": "error", "error": f"{type(e).__name__}: {e}"}
 
 
-@tool("get_finnhub_news", max_usage_count=1)
 def get_finnhub_news(symbol: str, start_date: str, end_date: str) -> str:
     """Get company-specific news from Finnhub."""
     try:
@@ -78,7 +65,6 @@ def get_finnhub_news(symbol: str, start_date: str, end_date: str) -> str:
     except Exception as e:
         return f"Error fetching news: {e}"
 
-@tool("get_social_media_sentiment", max_usage_count=1)
 def get_social_media_sentiment(symbol: str, end_date: str) -> str:
     """Search web for recent social sentiment relevant to swing trading."""
     tavily = TavilySearch(max_results=5)
@@ -86,22 +72,19 @@ def get_social_media_sentiment(symbol: str, end_date: str) -> str:
     return tavily.invoke({"query": query})
 
 # TODO Depper check on the input and output logic to make sure the Agent can decide on the company strength.
-@tool("get_fundamental_analysis", max_usage_count=1)
 def get_fundamental_analysis(symbol: str, end_date: str) -> str:
     """Search for recent fundamental analysis reports suitable for swing trading."""
     tavily = TavilySearch(max_results=7)
     query = f"{symbol} fundamental analysis OR earnings OR valuation OR price target before:{end_date}"
     return tavily.invoke({"query": query})
 
-@tool("get_macroeconomic_news", max_usage_count=1)
 def get_macroeconomic_news(end_date: str) -> str:
     """Search for macroeconomic events impacting markets around the trade date."""
     tavily = TavilySearch(max_results=15)
     query = f"macroeconomic news OR Fed OR inflation OR jobs OR GDP OR interest rates before {end_date}"
     return tavily.invoke({"query": query})
 
-# Export list of tools
-TOOLS = {
+_TOOL_FUNCTIONS: dict[str, Callable] = {
     "get_yfinance_data": get_yfinance_data,
     "get_technical_indicators": get_technical_indicators,
     "get_finnhub_news": get_finnhub_news,
@@ -109,3 +92,19 @@ TOOLS = {
     "get_fundamental_analysis": get_fundamental_analysis,
     "get_macroeconomic_news": get_macroeconomic_news,
 }
+TOOL_NAMES = tuple(_TOOL_FUNCTIONS)
+
+
+def build_tools(*names: str, max_usage_count: int = 1) -> list:
+    """Return fresh CrewAI tool objects for one crew instance.
+
+    CrewAI counts usage on the tool object itself, writes that count back to the original
+    tool, and never resets it. Module-level tool singletons with max_usage_count=1 therefore
+    lock after the first crew that uses them: every watchlist symbol after the first got a
+    usage-limit error on every tool. Build tools per crew instead, so the limit means
+    "once per symbol".
+    """
+    unknown = [n for n in names if n not in _TOOL_FUNCTIONS]
+    if unknown:
+        raise KeyError(f"Unknown tools {unknown}; known tools are {list(TOOL_NAMES)}")
+    return [tool(name, max_usage_count=max_usage_count)(_TOOL_FUNCTIONS[name]) for name in names]
