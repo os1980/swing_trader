@@ -1,7 +1,7 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-from src.tools.trading_tools import TOOLS
+from src.tools.trading_tools import build_tools
 
 from ..helpers.utils import local_embedder, local_llm_deep
 
@@ -13,11 +13,10 @@ class MacroCrew:
     agents_config = "config/macro_agents.yaml"  # relative to project root or absolute
     tasks_config = "config/macro_tasks.yaml"
 
-    agent_tools = [TOOLS["get_macroeconomic_news"]]
-
     @agent
     def macro_strategist(self) -> Agent:
-        return Agent(config=self.agents_config['macro_strategist'], tools=self.agent_tools,
+        return Agent(config=self.agents_config['macro_strategist'],
+                     tools=build_tools("get_macroeconomic_news"),
                      llm=self.llm, memory=True)
 
     @task

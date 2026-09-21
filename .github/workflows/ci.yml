@@ -22,7 +22,7 @@ jobs:
         # externally managed, so install into a venv rather than with --system.
         run: |
           uv venv --python 3.12
-          uv pip install pytest ruff pyyaml pydantic "psycopg[binary]"
+          uv pip install pytest ruff pyyaml pydantic "psycopg[binary]" pandas numpy stockstats
 
       - name: Lint
         run: .venv/bin/ruff check .
