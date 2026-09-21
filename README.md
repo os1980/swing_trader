@@ -53,7 +53,8 @@ before the trade date. A new data source that ignores this makes backtest result
 ChromaDB directory. Sharing one store makes the model invent cross-symbol references.
 
 `CLAUDE.md` holds the full set of conventions and is the file to read before changing
-anything. `AGENTS.md` points at it.
+anything. `AGENTS.md` points at it. Automated review instructions for those same rules live
+in `.gitar/review/`, with automations in `.gitar/rules/`.
 
 ## Developing
 

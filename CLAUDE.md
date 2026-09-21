@@ -102,6 +102,23 @@ $MEMORY_DB_BASE_DIR/analyze/tickers/<SYMBOL>/        # AnalysisCrew, per symbol
 
 **Van Tharp expectancy.** The strategy crew's logic is built around `E = (Pw × Reward) − (Pl × Risk)` with position sizing such that 1R equals exactly `RISK_PER_TRADE × EQUITY`. Don't introduce alternative sizing without coordinating with the strategy task definition.
 
+## Automated code review (Gitar)
+
+Gitar's per-repository configuration lives in `.gitar/`:
+
+- `.gitar/review/*.md` — what reviewers should look for, by topic: lookahead and data
+  boundaries, crew prompts and CrewAI 1.8.1 specifics, expectancy and sizing, persistence,
+  and Python/secrets. These describe *review checks*, not project background.
+- `.gitar/rules/*.md` — natural-language automations with YAML front matter
+  (`title`, `description`, `type`, `when`, `actions`): output-contract sync, a lookahead
+  guard, a secrets guard, and change-area labelling.
+- `.gitar/config/risk.md` — repository risk guidance. Prompt, sizing, schema, migration, and
+  data-tool changes are high risk; tests and docs are low.
+
+`AGENTS.md` and `CLAUDE.md` are read automatically, so don't duplicate project background
+into `.gitar/review/`. Keep those files about what a diff should be checked for. When a
+convention here changes, check whether a review instruction needs the same edit.
+
 ## Skills
 
 Use these skills when working on this project:
