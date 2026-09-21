@@ -66,7 +66,7 @@ swing_analysis_task:
     Tool 3: get_fundamental_analysis(symbol="{symbol}", end_date="{end_date}")
     → Get: P/E ratio, debt-to-equity ratio, profit margin %, EPS, revenue growth %
     
-    Tool 4: get_finnhub_news(symbol="{symbol}", start_date="{start_date}")
+    Tool 4: get_finnhub_news(symbol="{symbol}", start_date="{start_date}", end_date="{end_date}")
     → Get: News headlines, sentiment scores
     
     Tool 5: get_social_media_sentiment(symbol="{symbol}", end_date="{end_date}")

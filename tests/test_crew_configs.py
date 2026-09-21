@@ -145,3 +145,19 @@ def test_rendered_strategy_template_is_a_valid_portfolio_response():
 
     empty = rendered[end:].split(":", 1)[1].strip()
     assert PortfolioResponse.model_validate(json.loads(empty)).trades == []
+
+
+_TOOL_CALL = re.compile(r"\b(get_[a-z_]+)\(([^)]*)\)")
+
+
+@pytest.mark.parametrize("crew", CREWS)
+def test_every_tool_call_example_passes_end_date(crew):
+    """Every tool the crews use takes end_date, and none applies a cutoff of its own.
+
+    The model copies these example calls, so an example without end_date leaves the
+    no-lookahead bound to whatever date the model guesses.
+    """
+    text = _text(load_config(f"{crew}_tasks.yaml"))
+    calls = _TOOL_CALL.findall(text)
+    missing = [name for name, args in calls if 'end_date="{end_date}"' not in args]
+    assert not missing, f"{crew}_tasks.yaml shows {missing} called without end_date"
