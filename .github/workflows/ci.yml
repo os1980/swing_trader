@@ -18,12 +18,15 @@ jobs:
       - name: Install check dependencies
         # A full `uv sync` is not used here: ta-lib and pygraphviz need system
         # libraries, and the tests deliberately import neither. Keep this list in
-        # step with what tests/ actually imports.
-        run: uv pip install --system pytest ruff pyyaml pydantic "psycopg[binary]"
+        # step with what tests/ actually imports. The runner's system Python is
+        # externally managed, so install into a venv rather than with --system.
+        run: |
+          uv venv --python 3.12
+          uv pip install pytest ruff pyyaml pydantic "psycopg[binary]"
 
       - name: Lint
-        run: ruff check .
+        run: .venv/bin/ruff check .
 
       - name: Test
         # Offline by design: no Ollama, no database, no network.
-        run: pytest
+        run: .venv/bin/pytest
