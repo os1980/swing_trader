@@ -1,7 +1,7 @@
-from crewai import LLM
-import pathlib
 import os
+import pathlib
 
+from crewai import LLM
 
 CONFIG_BASE_DIR = str(pathlib.Path(__file__).parent / "config")
 # MEMORY_BASE_DIR = pathlib.Path(__file__).parent.parent / "knowledge"

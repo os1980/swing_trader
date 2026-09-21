@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
 import os
+
+from pydantic import BaseModel, Field
+
 
 def get_float_env(key: str, default: float) -> float:
     """Get environment variable as float with fallback to default."""
@@ -13,10 +14,10 @@ def get_float_env(key: str, default: float) -> float:
         return default
 
 class TradeSetup(BaseModel):
-    entry_price: Optional[float] = Field(description="The price at which to enter the trade. Optional if the signal is HOLD or SELL.")
-    stop_loss: Optional[float] = Field(description="The price at which to exit the trade to limit losses. Optional if the signal is HOLD or SELL.")
-    profit_target: Optional[float] = Field(description="The price at which to exit the trade to take profits. Optional if the signal is HOLD or SELL.")
-    r_multiple_target: Optional[float] = Field(description="Target Reward divided by Initial Risk (1R). Optional if the signal is HOLD or SELL.")
+    entry_price: float | None = Field(description="The price at which to enter the trade. Optional if the signal is HOLD or SELL.")
+    stop_loss: float | None = Field(description="The price at which to exit the trade to limit losses. Optional if the signal is HOLD or SELL.")
+    profit_target: float | None = Field(description="The price at which to exit the trade to take profits. Optional if the signal is HOLD or SELL.")
+    r_multiple_target: float | None = Field(description="Target Reward divided by Initial Risk (1R). Optional if the signal is HOLD or SELL.")
 
 class ExpectancyScorecard(BaseModel):
     win_probability: float = Field(description="Probability of a winning trade (0.0 to 1.0)")
@@ -36,9 +37,9 @@ class TradeSignal(BaseModel):
     trade_setup: TradeSetup
     expectancy_scorecard: ExpectancyScorecard
     position_sizing: PositionSizing
-    rationale: Dict[str, Optional[str]] = Field(description="Keys: bull_case, bear_case (Steel-Man debate). Values may be null.")
+    rationale: dict[str, str | None] = Field(description="Keys: bull_case, bear_case (Steel-Man debate). Values may be null.")
 
 class PortfolioResponse(BaseModel):
     """The final output sent to the application"""
-    trades: List[TradeSignal] = Field(description="A list of trade signals ranked by Expectancy.")
+    trades: list[TradeSignal] = Field(description="A list of trade signals ranked by Expectancy.")
     total_portfolio_risk_percent: float = Field(default=0.0, description="Sum of 1% risk for all BUY signals.")

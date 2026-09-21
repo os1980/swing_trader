@@ -171,19 +171,18 @@ def finish_run(
                 trade.rationale.get("bull_case"), trade.rationale.get("bear_case"),
             ))
 
-    with _connect() as conn:
-        with conn.cursor() as cur:
-            cur.executemany(
-                """
+    with _connect() as conn, conn.cursor() as cur:
+        cur.executemany(
+            """
                 INSERT INTO trading_strategy.swing_sentry_symbol_analyses
                     (run_id, symbol, analysis_report)
                 VALUES (%s, %s, %s)
                 """,
-                [(run_id, _normalize_symbol(s), report) for s, report in analyses.items()],
-            )
-            if signal_rows:
-                cur.executemany(
-                    """
+            [(run_id, _normalize_symbol(s), report) for s, report in analyses.items()],
+        )
+        if signal_rows:
+            cur.executemany(
+                """
                     INSERT INTO trading_strategy.swing_sentry_signals
                         (run_id, symbol, trade_date, expectancy_rank, signal, market_type,
                          entry_price, stop_loss, profit_target, r_multiple_target,
@@ -192,10 +191,10 @@ def finish_run(
                          bull_case, bear_case)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
-                    signal_rows,
-                )
-            cur.execute(
-                """
+                signal_rows,
+            )
+        cur.execute(
+            """
                 UPDATE trading_strategy.swing_sentry_runs
                    SET status = %s,
                        macro_context = %s,
@@ -206,12 +205,12 @@ def finish_run(
                        db_modify_date = now()
                  WHERE run_id = %s
                 """,
-                (
-                    summary.status, macro_context, raw_output(strategy_result),
-                    portfolio.total_portfolio_risk_percent if portfolio else None,
-                    summary.error_message, run_id,
-                ),
-            )
+            (
+                summary.status, macro_context, raw_output(strategy_result),
+                portfolio.total_portfolio_risk_percent if portfolio else None,
+                summary.error_message, run_id,
+            ),
+        )
 
     summary.signals_written = len(signal_rows)
     return summary
