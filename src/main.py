@@ -4,7 +4,8 @@ from getpass import getpass
 import os
 import sys
 
-sys.stdin = open(os.devnull)
+# Detach stdin for the whole process so no library can block on an interactive prompt.
+sys.stdin = open(os.devnull)  # noqa: SIM115 - intentionally kept open for the process lifetime
 
 # Need to be before the crewai imports to control the location of the storage
 def _set_env(var: str):
@@ -251,7 +252,7 @@ def run_multi_symbol(watchlist: list, trade_date: str):
 
     # TODO add simple extract information from the report as dataframe (symbol, signal, stop loss, take profit etc.)
     try:
-        report_df = pd.DataFrame.from_records(strategy_result)
+        report_df = pd.DataFrame.from_records(strategy_result)  # noqa: F841 - placeholder for the TODO above
     except Exception as e:
         print(e)
 

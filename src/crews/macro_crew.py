@@ -1,11 +1,13 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from ..helpers.utils import local_llm_deep, local_embedder
+
 from src.tools.trading_tools import TOOLS
+
+from ..helpers.utils import local_embedder, local_llm_deep
 
 
 @CrewBase
-class MacroCrew():
+class MacroCrew:
 
     llm = local_llm_deep
     agents_config = "config/macro_agents.yaml"  # relative to project root or absolute

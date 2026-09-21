@@ -1,11 +1,13 @@
-from crewai.tools import tool
-import yfinance as yf
-import finnhub
-from langchain_tavily import TavilySearch
-# import pandas as pd
-from datetime import datetime#, timedelta
-from stockstats import wrap as stockstats_wrap
 import os
+
+# import pandas as pd
+from datetime import datetime  #, timedelta
+
+import finnhub
+import yfinance as yf
+from crewai.tools import tool
+from langchain_tavily import TavilySearch
+from stockstats import wrap as stockstats_wrap
 
 
 # Now define your tools using the correct @tool decorator
@@ -24,7 +26,7 @@ def get_yfinance_data(symbol: str, start_date: str, end_date: str) -> dict:
             "lows": data["Low"].tolist(),
             "dates": data["Date"].dt.strftime('%Y-%m-%d').tolist()
         }
-    except Exception as e:
+    except Exception:
         return { "status": "no_data"} #f"Error fetching Yahoo Finance data: {e}"
 
 @tool("get_technical_indicators", max_usage_count=1)

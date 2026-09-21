@@ -40,6 +40,13 @@ dependencies = [
     "psycopg[binary]>=3.2",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.14",
+    "pre-commit>=4.0",
+]
+
 [tool.uv]
 package = true
 override-dependencies = [
@@ -52,12 +59,38 @@ override-dependencies = [
 packages = ["src"]
 
 [project.scripts]
+# Only `run` is implemented. train/replay/test used to be registered here and
+# pointed at functions that do not exist; don't re-add them without the code.
 ai_trading_crew = "src.main:run"
 run_crew = "src.main:run"
-train = "src.backtest:train"
-replay = "src.main:replay"
-test = "src.main:test"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["src/*.egg-info", "knowledge", "final_reports"]
+
+[tool.ruff.lint]
+# Conservative on an existing codebase: correctness and obvious cleanups only.
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "SIM"]
+ignore = [
+    "E501",    # line length is formatter territory
+    "B008",    # FastAPI/CrewAI style default calls
+    "SIM105",  # contextlib.suppress is not always clearer
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+# main.py sets environment variables and patches CrewAI tracing before importing
+# crewai, so its import order is load-bearing. Don't let the linter sort it.
+"src/main.py" = ["E402", "I001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "integration: needs a live database, Ollama, or network; skipped by default",
+]

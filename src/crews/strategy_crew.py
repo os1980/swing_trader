@@ -1,10 +1,12 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from ..helpers.utils import local_llm_deep, local_embedder
+
 from ..helpers.trade_signals import PortfolioResponse
+from ..helpers.utils import local_embedder, local_llm_deep
+
 
 @CrewBase
-class StrategyCrew():
+class StrategyCrew:
 
     llm = local_llm_deep
 

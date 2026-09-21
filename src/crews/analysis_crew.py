@@ -1,13 +1,14 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from ..helpers.utils import local_llm_deep, local_embedder
+
 from src.tools.trading_tools import TOOLS
 
+from ..helpers.utils import local_embedder, local_llm_deep
 
 USE_MEMORY = False  # Set to False to disable memory and test if the issue is memory-related
 
 @CrewBase
-class AnalysisCrew():
+class AnalysisCrew:
 
     llm = local_llm_deep
 

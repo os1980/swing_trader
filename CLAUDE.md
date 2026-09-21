@@ -19,9 +19,27 @@ python -m src.main                       # runs SwingSentryFlow against the hard
 
 **Use `uv sync`, not `pip install -r requirements.txt`.** CrewAI is pinned to 1.8.1 in `pyproject.toml`. `crewai-tools` 1.8.1 declares `lancedb<0.6`, but PyPI deleted every lancedb release below 0.14, so pip cannot install it. `pyproject.toml` works around this with a `[tool.uv] override-dependencies` entry for `lancedb>=0.14`. Don't loosen the CrewAI pin: an unpinned lock refresh silently jumps to the latest CrewAI.
 
-The `pyproject.toml` registers `ai_trading_crew`, `run_crew`, `train`, `replay`, and `test` script entry points, but **only `run` (`src.main:run`) is implemented**. `train` points at `src.backtest:train`, which does not exist; `replay` and `test` are likewise unimplemented. Don't assume those commands work.
+`pyproject.toml` registers only `ai_trading_crew` and `run_crew`, both pointing at `src.main:run`. The old `train`, `replay`, and `test` entry points were removed because they pointed at functions that do not exist. Don't re-add them without the code.
 
-There is **no test suite, no linter, and no formatter configured** — no pytest, ruff, black, mypy, Makefile, or CI. Adding any of these is a green field.
+## Development workflow
+
+Every routine action has a Makefile target; `make` alone lists them.
+
+```bash
+make setup     # uv sync --group dev
+make test      # pytest, offline, a few seconds
+make lint      # ruff check
+make check     # lint + test, the same thing CI runs
+make migrate   # apply db/migrations against $ALGO_TRADING_DATABASE_URL
+```
+
+**Tests are offline by design.** `tests/` never calls an LLM, a database, or the network. It holds static checks on the crew YAML (required keys, `{placeholder}` names matching what `src/main.py` passes to each kickoff, the no-lookahead bound) plus unit tests on `trade_signals.py` and the pure helpers in `db.py`. Anything needing a live service belongs behind the `integration` marker. Run tests after editing prompts: a `{typo}` in YAML otherwise surfaces only after minutes of LLM time.
+
+**`xfail` markers document known defects.** Several tests are marked `xfail` with a reason tied to a code-review finding, for example the `{{` braces in `strategy_tasks.yaml` that CrewAI 1.8.1 does not unescape, and the deleted JSON-only rule. They are not flaky tests. Fix the defect, watch the test pass, then remove the marker.
+
+**Lint is green; keep it that way.** `ruff check` passes on the whole repo. `src/main.py` is exempt from `E402` and import sorting because its import order is load-bearing: it sets environment variables and patches CrewAI tracing before importing crewai. The formatter has *not* been run repo-wide; pre-commit formats only the files in each commit, so the codebase converges without one giant diff. Install it with `uv run pre-commit install`.
+
+CI (`.github/workflows/ci.yml`) installs a minimal dependency set rather than running `uv sync`, because `ta-lib` and `pygraphviz` need system libraries the tests don't touch. If a test starts importing something new, add it to that list.
 
 ## Required environment
 
@@ -31,7 +49,9 @@ The flow will fail or prompt interactively without these:
 - `FINAL_REPORT_BASE_DIR` — where the StrategyCrew writes its final JSON
 - `FINNHUB_API_KEY`, `TAVILY_API_KEY` — used by tools in `src/tools/trading_tools.py`
 - `OPENAI_API_KEY` — CrewAI requests it on import even though the runtime LLM is Ollama; supply any non-empty value
-- `EQUITY`, `RISK_PER_TRADE` — drive position sizing in StrategyCrew prompts
+- `EQUITY`, `RISK_PER_TRADE` — drive position sizing in StrategyCrew prompts. `RISK_PER_TRADE` is a fraction (0.01 = 1%), and `main.py` multiplies it by 100 before interpolating it into prompts
+
+`.env.example` is the tracked template listing every variable the flow reads; `.env` itself is gitignored.
 - `ALGO_TRADING_DATABASE_URL` — optional Postgres connection string. When set, each run is persisted (see "Persistence" below) and an unreachable database fails the run before any LLM call. When unset, the flow writes JSON reports only.
 
 ## Architecture
@@ -82,6 +102,23 @@ $MEMORY_DB_BASE_DIR/analyze/tickers/<SYMBOL>/        # AnalysisCrew, per symbol
 
 **Van Tharp expectancy.** The strategy crew's logic is built around `E = (Pw × Reward) − (Pl × Risk)` with position sizing such that 1R equals exactly `RISK_PER_TRADE × EQUITY`. Don't introduce alternative sizing without coordinating with the strategy task definition.
 
+## Automated code review (Gitar)
+
+Gitar's per-repository configuration lives in `.gitar/`:
+
+- `.gitar/review/*.md` — what reviewers should look for, by topic: lookahead and data
+  boundaries, crew prompts and CrewAI 1.8.1 specifics, expectancy and sizing, persistence,
+  and Python/secrets. These describe *review checks*, not project background.
+- `.gitar/rules/*.md` — natural-language automations with YAML front matter
+  (`title`, `description`, `type`, `when`, `actions`): output-contract sync, a lookahead
+  guard, a secrets guard, and change-area labelling.
+- `.gitar/config/risk.md` — repository risk guidance. Prompt, sizing, schema, migration, and
+  data-tool changes are high risk; tests and docs are low.
+
+`AGENTS.md` and `CLAUDE.md` are read automatically, so don't duplicate project background
+into `.gitar/review/`. Keep those files about what a diff should be checked for. When a
+convention here changes, check whether a review instruction needs the same edit.
+
 ## Skills
 
 Use these skills when working on this project:
@@ -92,7 +129,7 @@ Use these skills when working on this project:
 - `/engineering-skills:senior-ml-engineer` — LLM integration, CrewAI agent tuning, embedding pipelines, model orchestration
 - `/engineering-skills:senior-prompt-engineer` — CrewAI agent backstories and task prompts, output formatting, hallucination reduction
 - `/engineering-skills:code-reviewer` — Code review for Python quality, API safety, and trading logic correctness
-- `/engineering-skills:tdd-guide` — Building out the test suite (currently nonexistent)
+- `/engineering-skills:tdd-guide` — Extending the test suite in `tests/`
 - `/engineering-skills:senior-security` — API key management, credential handling, .env safety
 - `/engineering-skills:adversarial-reviewer` — Stress-testing trading logic, edge cases, and data boundary assumptions
 

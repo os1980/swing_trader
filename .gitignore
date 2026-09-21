@@ -209,4 +209,13 @@ __marimo__/
 
 final_reports/
 knowledge/
-uv.lock
+
+# Local editor and agent state
+.claude/
+.vscode/
+.DS_Store
+src/*.egg-info/
+
+# Real secrets live in .env; .env.example is the tracked template
+.env
+!.env.example
